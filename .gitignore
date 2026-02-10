@@ -1,5 +1,6 @@
 # Dolt
 .dolt/
+.doltcfg/
 .sqlhistory
 
 # Cargo
