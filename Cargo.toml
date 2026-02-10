@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 rocket = { version = "0.5.1", features = ["json", "tls"] }
+rocket_db_pools = { version = "0.2.0", features = ["sqlx_mysql"] }
+serde = { version = "1.0.228", features = ["derive"] }

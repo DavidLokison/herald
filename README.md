@@ -5,17 +5,8 @@ This is the REST-API application layer of the historischer-besiedlungszug.de web
 - This project is built security-first. No communication with other services shall be logged in production mode whatsoever.
 - Encryption and other concerns are bound to change. It is advised to define and call a small amount of wrapper functions for communicating with other services.
 
-## Documentation
-The service uses the following environment variables for configuration:
-
-- `DEBUG` – Run the server in debugging mode
-- `DB_HOST` – Backend Database Hostname
-- `DB_PORT` – Backend Database Port
-- `DB_NAME` – Backend Database Name
-- `DB_USER` – Backend Database User
-- `DB_PASSWORD` – Backend Database Password
-
-The repository provides a `.env` file with the default values used for local development. Deployment of the service can override specific environment variables or provide a separate `.env` file.
+## Configuration
+The service uses Rocket's default configuration file `Rocket.toml`. See its [Configuration Guide](https://rocket.rs/guide/v0.5/configuration/) for details.
 
 ## Contribution
 Contribution is highly welcome, whether by writing Issues or providing code. The Cargo framework should take care about most of the dependencies, but you need a local copy of the backend database service as well. For that you need to install [Dolt](https://www.dolthub.com/) and clone the publicly hosted database schema from DoltHub, which is called [Herald](https://www.dolthub.com/repositories/besiedlungszug/herald) as well. For the most simple setup, just run `dolt clone besiedlungszug/herald . && dolt clone davidlokison/base32` in the git repository, the `.gitignore` is already set up to exclude any dolt related files.
