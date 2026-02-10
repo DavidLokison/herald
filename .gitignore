@@ -1,0 +1,6 @@
+# Dolt
+.dolt/
+.sqlhistory
+
+# Cargo
+/target
