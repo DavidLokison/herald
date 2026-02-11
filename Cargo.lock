@@ -620,6 +620,7 @@ dependencies = [
  "rocket",
  "rocket_db_pools",
  "serde",
+ "sqlx",
 ]
 
 [[package]]
