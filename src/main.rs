@@ -16,6 +16,8 @@ struct UpstreamHealth {
 struct Event {
     #[sqlx(rename = "event_id")]
     id: String,
+    #[sqlx(rename = "event_type_slug")]
+    r#type: String,
     title: String,
     begin: Date,
     end: Date,
@@ -40,7 +42,7 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
 
 #[get("/events/open")]
 async fn get_open_events(mut db: Connection) -> Response<Vec<Event>> {
-    let events: Vec<Event> = sqlx::query_as("SELECT event_id, title, begin, end, description FROM api_events WHERE deadline >= CURRENT_DATE")
+    let events: Vec<Event> = sqlx::query_as("SELECT event_id, event_type_slug, title, begin, end, description FROM api_events WHERE deadline >= CURRENT_DATE")
         .fetch_all(&mut **db).await?;
     Ok((Status::Ok, events).into())
 }
