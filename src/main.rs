@@ -24,6 +24,14 @@ struct Event {
     description: String,
 }
 
+#[derive(Serialize, FromRow, Debug)]
+struct Article {
+    #[sqlx(rename = "article_id")]
+    id: String,
+    description: String,
+    price: String,
+}
+
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
     use std::time::{Instant, Duration};
@@ -47,11 +55,29 @@ async fn get_open_events(mut db: Connection) -> Response<Vec<Event>> {
     Ok((Status::Ok, events).into())
 }
 
+#[get("/events/types")]
+async fn get_event_types(mut db: Connection) -> Response<Vec<String>> {
+    let types: Vec<String> = sqlx::query_scalar("SELECT event_type_slug FROM event_types")
+        .fetch_all(&mut **db).await?;
+    Ok(types.into())
+}
+
+#[get("/events/types/<event_type_slug>/items")]
+async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Response<Vec<Article>> {
+    // TODO: return a 404 if the event type slug doesn't exist
+    let items: Vec<Article> = sqlx::query_as("SELECT article_id, description, price FROM api_item_articles WHERE event_type_slug IS NULL OR event_type_slug = ?")
+        .bind(event_type_slug)
+        .fetch_all(&mut **db).await?;
+    Ok(items.into())
+}
+
 #[launch]
 fn rocket() -> _ {
     core::build()
         .mount("/", routes![
             check_health,
             get_open_events,
+            get_event_types,
+            get_bookable_items,
         ])
 }
