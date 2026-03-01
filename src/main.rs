@@ -29,7 +29,9 @@ struct Article {
     #[sqlx(rename = "article_id")]
     id: String,
     description: String,
-    price: String,
+    // TODO: make the price an own structure with an u32, an u8 for decimals and a &str (String?)
+    // for the currency
+    price: u32,
 }
 
 #[get("/health")]
