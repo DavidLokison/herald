@@ -1,6 +1,33 @@
+use sqlx::{
+    MySql,
+    Type,
+    mysql::MySqlTypeInfo,
+};
 use serde::Serialize;
 use time::Date;
 
+#[derive(Serialize, Debug)]
+pub struct Price {
+    pub value: u32,
+    pub decimals: u8,
+    pub currency: String,
+}
+
+impl Type<MySql> for Price {
+    fn type_info() -> MySqlTypeInfo {
+        u32::type_info()
+    }
+}
+
+impl From<u32> for Price {
+    fn from(value: u32) -> Self {
+        Self {
+            value: value,
+            decimals: 2,
+            currency: "EUR".to_string(),
+        }
+    }
+}
 #[derive(Serialize, Debug)]
 pub struct UpstreamHealth {
     pub ping: f32,
@@ -20,7 +47,5 @@ pub struct Event {
 pub struct Article {
     pub id: String,
     pub description: String,
-    // TODO: make the price an own structure with an u32, an u8 for decimals and a &str (String?)
-    // for the currency
-    pub price: u32,
+    pub price: Price,
 }
