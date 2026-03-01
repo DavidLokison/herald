@@ -5,3 +5,6 @@
 
 # Cargo
 /target
+
+# Environment
+.env

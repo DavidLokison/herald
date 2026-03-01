@@ -8,6 +8,7 @@ This is the REST-API application layer of the historischer-besiedlungszug.de web
 ## Configuration
 - `Rocket.toml`: The service uses Rocket's default configuration file. See its [Configuration Guide](https://rocket.rs/guide/v0.5/configuration/) for details.
 - `config.yaml`: Provided by the repository is the default generated config for running a Dolt SQL Server locally. The only purpose is that it doesn't have to be gitignored as it "feels strange" to gitignore a public non-dotfile configuration file.
+- `.env`: SQLx has a feature of compile-time checking queries and resolving to the actual data types. For that to work, the database URL has to be set. A `.env.example` provides the defaults for the local environment.
 
 ## Dependencies
 ### Binary Dependencies
