@@ -5,6 +5,7 @@ use sqlx::{
 };
 use serde::Serialize;
 use time::Date;
+use uuid::Uuid;
 
 #[derive(Serialize, Debug)]
 pub struct Price {
@@ -35,7 +36,7 @@ pub struct UpstreamHealth {
 
 #[derive(Serialize, Debug)]
 pub struct Event {
-    pub id: String,
+    pub id: Uuid,
     pub r#type: String,
     pub title: String,
     pub begin: Date,

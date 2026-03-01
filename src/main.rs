@@ -33,7 +33,7 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
 async fn get_open_events(mut db: Connection) -> Response<Vec<Event>> {
     let events: Vec<Event> = sqlx::query_as!(
             Event,
-            "SELECT event_id AS id, event_type_slug AS type, title, begin, end AS `end!`, description FROM api_events WHERE deadline >= CURRENT_DATE",
+            "SELECT event_id AS `id: _`, event_type_slug AS type, title, begin, end AS `end!`, description FROM api_events WHERE deadline >= CURRENT_DATE",
         )
         .fetch_all(&mut **db).await?;
     Ok((Status::Ok, events).into())
