@@ -1,34 +1,10 @@
 use rocket::{get, launch, routes};
 use rocket::http::Status;
-use serde::Serialize;
-use time::Date;
 
 mod core;
+mod types;
 use crate::core::{Connection, Response};
-
-#[derive(Serialize, Debug)]
-struct UpstreamHealth {
-    ping: f32,
-}
-
-#[derive(Serialize, Debug)]
-struct Event {
-    id: String,
-    r#type: String,
-    title: String,
-    begin: Date,
-    end: Date,
-    description: Option<String>,
-}
-
-#[derive(Serialize, Debug)]
-struct Article {
-    id: String,
-    description: String,
-    // TODO: make the price an own structure with an u32, an u8 for decimals and a &str (String?)
-    // for the currency
-    price: u32,
-}
+use crate::types::*;
 
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
