@@ -1,10 +1,13 @@
-use rocket::{get, launch, routes};
+use rocket::{get, post, launch, routes};
 use rocket::http::Status;
+use rocket::serde::json::Json;
+use uuid::Uuid;
 
 mod core;
 mod types;
 use crate::core::{Connection, Response};
 use crate::types::*;
+use crate::types::request::*;
 
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
@@ -58,6 +61,34 @@ async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Respon
     Ok(items.into())
 }
 
+#[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")]
+async fn check_persons_price(mut db: Connection, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>) -> Response<Vec<Article>> {
+    sqlx::query_scalar!("SELECT 1 FROM events WHERE event_id = ?", event_id)
+        .fetch_optional(&mut **db).await?
+        .ok_or_else(|| (Status::NotFound, "event_id"))?;
+    let table_def = persons.0.iter().map(|_| "SELECT ?, ?, ?").collect::<Vec<_>>().join(" UNION ALL ");
+    let query_str = format!(concat!(
+            "WITH\n",
+            " map AS (SELECT * FROM util_event_article_policy_map WHERE event_id = ?),\n",
+            " data (ord, birthday, team) AS ({})\n",
+            "SELECT HEX(article_id) AS id, a.description, price\n",
+            "FROM data\n",
+            " INNER JOIN LATERAL (\n",
+            "  SELECT article_id FROM map WHERE (\n",
+            "   policy_flags IS NULL OR policy_flags = team\n",
+            "  ) AND (\n",
+            "   policy_birthday IS NULL OR policy_birthday >= birthday\n",
+            "  ) ORDER BY policy_flags DESC, policy_age DESC LIMIT 1\n",
+            " ) m\n",
+            " INNER JOIN articles a USING (article_id)\n",
+            "ORDER BY ord"), table_def);
+    let mut query = sqlx::query_as(query_str.as_str()).bind(event_id);
+    for (index, person) in persons.0.iter().enumerate() {
+        query = query.bind(index as u32).bind(person.birthday).bind(person.team);
+    }
+    query.fetch_all(&mut **db).await.map_err(Into::into).map(Into::into)
+}
+
 #[launch]
 fn rocket() -> _ {
     core::build()
@@ -66,5 +97,6 @@ fn rocket() -> _ {
             get_open_events,
             get_event_types,
             get_bookable_items,
+            check_persons_price,
         ])
 }

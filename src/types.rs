@@ -1,11 +1,16 @@
 use sqlx::{
     MySql,
     Type,
+    FromRow,
+    Decode,
+    mysql::MySqlValueRef,
     mysql::MySqlTypeInfo,
 };
 use serde::Serialize;
 use time::Date;
 use uuid::Uuid;
+
+pub mod request;
 
 #[derive(Serialize, Debug)]
 pub struct Price {
@@ -29,6 +34,18 @@ impl From<u32> for Price {
         }
     }
 }
+
+impl<'r> Decode<'r, MySql> for Price
+where
+    u32: Decode<'r, MySql>
+{
+    fn decode(
+        value: MySqlValueRef<'r>,
+    ) -> Result<Self, Box<dyn std::error::Error + 'static + Send + Sync>> {
+        <u32 as Decode<MySql>>::decode(value).map(Into::into)
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct UpstreamHealth {
     pub ping: f32,
@@ -44,7 +61,7 @@ pub struct Event {
     pub description: Option<String>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, FromRow, Debug)]
 pub struct Article {
     pub id: String,
     pub description: String,
