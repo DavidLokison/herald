@@ -51,7 +51,9 @@ async fn get_event_types(mut db: Connection) -> Response<Vec<String>> {
 
 #[get("/events/types/<event_type_slug>/items")]
 async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Response<Vec<Article>> {
-    // TODO: return a 404 if the event type slug doesn't exist
+    sqlx::query_scalar!("SELECT 1 FROM event_types WHERE event_type_slug = ?", event_type_slug)
+        .fetch_optional(&mut **db).await?
+        .ok_or_else(|| (Status::NotFound, event_type_slug))?;
     let items: Vec<Article> = sqlx::query_as!(
             Article,
             "SELECT article_id as id, description, price FROM api_item_articles WHERE event_type_slug IS NULL OR event_type_slug = ?",
@@ -65,7 +67,7 @@ async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Respon
 async fn check_persons_price(mut db: Connection, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>) -> Response<Vec<Article>> {
     sqlx::query_scalar!("SELECT 1 FROM events WHERE event_id = ?", event_id)
         .fetch_optional(&mut **db).await?
-        .ok_or_else(|| (Status::NotFound, "event_id"))?;
+        .ok_or_else(|| (Status::NotFound, event_id.as_hyphenated().to_string()))?;
     let table_def = persons.0.iter().map(|_| "SELECT ?, ?, ?").collect::<Vec<_>>().join(" UNION ALL ");
     let query_str = format!(concat!(
             "WITH\n",
