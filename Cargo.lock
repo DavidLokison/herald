@@ -1473,6 +1473,7 @@ dependencies = [
  "tokio-stream",
  "tokio-util",
  "ubyte",
+ "uuid",
  "version_check",
  "yansi",
 ]
@@ -1544,6 +1545,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "uncased",
+ "uuid",
 ]
 
 [[package]]
