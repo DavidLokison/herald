@@ -32,25 +32,10 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
     }
 }
 
-#[get("/events/open")]
-async fn get_open_events(mut db: Connection) -> Response<Vec<Event>> {
-    data::get_open_events(&mut **db).await.map(Into::into)
-}
-
-#[get("/events/types")]
-async fn get_event_types(mut db: Connection) -> Response<Vec<String>> {
-    data::get_event_types(&mut **db).await.map(Into::into)
-}
-
-#[get("/events/types/<event_type_slug>/items")]
-async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Response<Vec<Article>> {
-    data::get_bookable_items(&mut **db, event_type_slug).await.map(Into::into)
-}
-
-#[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")]
-async fn check_persons_price(mut db: Connection, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>) -> Response<Vec<Article>> {
-    data::check_persons_price(&mut db, &event_id, &persons).await.map(Into::into)
-}
+expose_endpoint!(#[get("/events/open")] get_open_events -> Vec<Event>);
+expose_endpoint!(#[get("/events/types")] get_event_types -> Vec<String>);
+expose_endpoint!(#[get("/events/types/<event_type_slug>/items")] get_bookable_items -> Vec<Article>, event_type_slug: &str);
+expose_endpoint!(#[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")] check_persons_price -> Vec<Article>, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>);
 
 #[launch]
 fn rocket() -> _ {

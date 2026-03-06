@@ -6,6 +6,23 @@ use crate::core::HeraldResponseErr;
 use crate::types::*;
 use crate::types::request::*;
 
+#[macro_export]
+macro_rules! expose_endpoint {
+    ($(#[$meta:meta])* $name:ident -> $T:ty) => {
+        $(#[$meta])*
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+            crate::data::$name(&mut db).await.map(Into::into)
+        }
+    };
+
+    ($(#[$meta:meta])* $name:ident -> $T:ty, $($arg:ident : $A:ty),*) => {
+        $(#[$meta])*
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>, $($arg: $A),*) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+            crate::data::$name(&mut db, $(&$arg),*).await.map(Into::into)
+        }
+    };
+}
+
 pub async fn event_exists(e: &mut MySqlConnection, event_id: &Uuid) -> Result<(), HeraldResponseErr> {
     sqlx::query_file_scalar!("sql/exists/event.sql", event_id).fetch_optional(e).await?
         .map(|_| ())
