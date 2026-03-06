@@ -4,6 +4,7 @@ use rocket::http::Status;
 
 use crate::core::HeraldResponseErr;
 use crate::types::*;
+use crate::types::request::*;
 
 pub async fn event_exists(e: &mut MySqlConnection, event_id: &Uuid) -> Result<(), HeraldResponseErr> {
     sqlx::query_file_scalar!("sql/exists/event.sql", event_id).fetch_optional(e).await?
@@ -33,3 +34,8 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>, Hera
         .map_err(Into::into)
 }
 
+pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheckPersonData>) -> Result<Vec<Article>, HeraldResponseErr> {
+    event_exists(e, event_id).await?;
+    sqlx::query_file_as!(Article, "sql/persons_price_check.sql", event_id, rocket::serde::json::to_string(persons).unwrap())
+        .fetch_all(e).await.map_err(Into::into)
+}

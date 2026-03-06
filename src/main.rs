@@ -49,28 +49,7 @@ async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Respon
 
 #[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")]
 async fn check_persons_price(mut db: Connection, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>) -> Response<Vec<Article>> {
-    data::event_exists(&mut **db, &event_id).await?;
-    let table_def = persons.0.iter().map(|_| "SELECT ?, ?, ?").collect::<Vec<_>>().join(" UNION ALL ");
-    let query_str = format!(concat!(
-            "WITH\n",
-            " map AS (SELECT * FROM util_event_article_policy_map WHERE event_id = ?),\n",
-            " data (ord, birthday, team) AS ({})\n",
-            "SELECT HEX(article_id) AS id, a.description, price\n",
-            "FROM data\n",
-            " INNER JOIN LATERAL (\n",
-            "  SELECT article_id FROM map WHERE (\n",
-            "   policy_flags IS NULL OR policy_flags = team\n",
-            "  ) AND (\n",
-            "   policy_birthday IS NULL OR policy_birthday >= birthday\n",
-            "  ) ORDER BY policy_flags DESC, policy_age DESC LIMIT 1\n",
-            " ) m\n",
-            " INNER JOIN articles a USING (article_id)\n",
-            "ORDER BY ord"), table_def);
-    let mut query = sqlx::query_as(query_str.as_str()).bind(event_id);
-    for (index, person) in persons.0.iter().enumerate() {
-        query = query.bind(index as u32).bind(person.birthday).bind(person.team);
-    }
-    query.fetch_all(&mut **db).await.map_err(Into::into).map(Into::into)
+    data::check_persons_price(&mut db, &event_id, &persons).await.map(Into::into)
 }
 
 #[launch]
