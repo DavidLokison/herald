@@ -1,0 +1,2 @@
+SELECT event_type_slug
+FROM event_types

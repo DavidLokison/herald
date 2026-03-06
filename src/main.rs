@@ -1,9 +1,9 @@
 use rocket::{get, post, launch, routes};
-use rocket::http::Status;
 use rocket::serde::json::Json;
 use uuid::Uuid;
 
 mod core;
+mod data;
 mod types;
 use crate::core::{Connection, Response};
 use crate::types::*;
@@ -34,40 +34,22 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
 
 #[get("/events/open")]
 async fn get_open_events(mut db: Connection) -> Response<Vec<Event>> {
-    let events: Vec<Event> = sqlx::query_as!(
-            Event,
-            "SELECT event_id AS `id: _`, event_type_slug AS type, title, begin, end AS `end!`, description FROM api_events WHERE deadline >= CURRENT_DATE",
-        )
-        .fetch_all(&mut **db).await?;
-    Ok((Status::Ok, events).into())
+    data::get_open_events(&mut **db).await.map(Into::into)
 }
 
 #[get("/events/types")]
 async fn get_event_types(mut db: Connection) -> Response<Vec<String>> {
-    let types: Vec<String> = sqlx::query_scalar!("SELECT event_type_slug FROM event_types")
-        .fetch_all(&mut **db).await?;
-    Ok(types.into())
+    data::get_event_types(&mut **db).await.map(Into::into)
 }
 
 #[get("/events/types/<event_type_slug>/items")]
 async fn get_bookable_items(mut db: Connection, event_type_slug: &str) -> Response<Vec<Article>> {
-    sqlx::query_scalar!("SELECT 1 FROM event_types WHERE event_type_slug = ?", event_type_slug)
-        .fetch_optional(&mut **db).await?
-        .ok_or_else(|| (Status::NotFound, event_type_slug))?;
-    let items: Vec<Article> = sqlx::query_as!(
-            Article,
-            "SELECT article_id as id, description, price FROM api_item_articles WHERE event_type_slug IS NULL OR event_type_slug = ?",
-            event_type_slug,
-        )
-        .fetch_all(&mut **db).await?;
-    Ok(items.into())
+    data::get_bookable_items(&mut **db, event_type_slug).await.map(Into::into)
 }
 
 #[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")]
 async fn check_persons_price(mut db: Connection, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>) -> Response<Vec<Article>> {
-    sqlx::query_scalar!("SELECT 1 FROM events WHERE event_id = ?", event_id)
-        .fetch_optional(&mut **db).await?
-        .ok_or_else(|| (Status::NotFound, event_id.as_hyphenated().to_string()))?;
+    data::event_exists(&mut **db, &event_id).await?;
     let table_def = persons.0.iter().map(|_| "SELECT ?, ?, ?").collect::<Vec<_>>().join(" UNION ALL ");
     let query_str = format!(concat!(
             "WITH\n",
