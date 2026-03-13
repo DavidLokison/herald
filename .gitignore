@@ -2,9 +2,7 @@
 .dolt/
 .doltcfg/
 .sqlhistory
+config.yaml
 
 # Cargo
 /target
-
-# Environment
-.env
