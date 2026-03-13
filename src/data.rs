@@ -4,7 +4,7 @@ use rocket::http::Status;
 
 use crate::core::HeraldResponseErr;
 use crate::types::*;
-use crate::types::request::*;
+use crate::types::intermediate;
 
 #[macro_export]
 macro_rules! expose_endpoint {
@@ -42,7 +42,9 @@ pub async fn get_event_types(e: &mut MySqlConnection) -> Result<Vec<String>, Her
 
 pub async fn get_bookable_items(e: &mut MySqlConnection, event_type_slug: &str) -> Result<Vec<Article>, HeraldResponseErr> {
     event_type_exists(e, event_type_slug).await?;
-    sqlx::query_file_as!(Article, "sql/bookable_items.sql", event_type_slug).fetch_all(e).await
+    sqlx::query_file_as!(intermediate::Article, "sql/bookable_items.sql", event_type_slug).fetch_all(e).await
+        // TODO: attach actual price info
+        .map(|v| v.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect())
         .map_err(Into::into)
 }
 
@@ -51,8 +53,11 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>, Hera
         .map_err(Into::into)
 }
 
-pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheckPersonData>) -> Result<Vec<Article>, HeraldResponseErr> {
+pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheck>) -> Result<Vec<Article>, HeraldResponseErr> {
+    use rocket::serde::json::to_string;
     event_exists(e, event_id).await?;
-    sqlx::query_file_as!(Article, "sql/persons_price_check.sql", event_id, rocket::serde::json::to_string(persons).unwrap())
-        .fetch_all(e).await.map_err(Into::into)
+    sqlx::query_file_as!(intermediate::Article, "sql/persons_price_check.sql", event_id, to_string(persons).unwrap()).fetch_all(e).await
+        // TODO: attach actual price info
+        .map(|v| v.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect())
+        .map_err(Into::into)
 }

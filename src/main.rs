@@ -7,7 +7,6 @@ mod data;
 mod types;
 use crate::core::{Connection, Response};
 use crate::types::*;
-use crate::types::request::*;
 
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
@@ -35,7 +34,7 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
 expose_endpoint!(#[get("/events/open")] get_open_events -> Vec<Event>);
 expose_endpoint!(#[get("/events/types")] get_event_types -> Vec<String>);
 expose_endpoint!(#[get("/events/types/<event_type_slug>/items")] get_bookable_items -> Vec<Article>, event_type_slug: &str);
-expose_endpoint!(#[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")] check_persons_price -> Vec<Article>, event_id: Uuid, persons: Json<Vec<PriceCheckPersonData>>);
+expose_endpoint!(#[post("/events/<event_id>/persons_price_check", format = "json", data = "<persons>")] check_persons_price -> Vec<Article>, event_id: Uuid, persons: Json<Vec<PriceCheck>>);
 
 #[launch]
 fn rocket() -> _ {
