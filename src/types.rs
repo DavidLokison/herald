@@ -4,11 +4,15 @@ use uuid::Uuid;
 
 pub(crate) mod intermediate;
 
-#[derive(Serialize, Deserialize)]
+use intermediate::IntoIntermediate;
+use crate::impl_intermediate;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PriceCheck {
     pub birthday: Date,
     pub team: bool,
 }
+impl_intermediate!(PriceCheck);
 
 #[derive(Serialize, Debug)]
 pub struct Price {

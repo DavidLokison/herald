@@ -5,6 +5,7 @@ use rocket::http::Status;
 use crate::core::HeraldResponseErr;
 use crate::types::*;
 use crate::types::intermediate;
+use crate::types::intermediate::IntoIntermediate;
 
 #[macro_export]
 macro_rules! expose_endpoint {
@@ -54,9 +55,8 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>, Hera
 }
 
 pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheck>) -> Result<Vec<Article>, HeraldResponseErr> {
-    use rocket::serde::json::to_string;
     event_exists(e, event_id).await?;
-    sqlx::query_file_as!(intermediate::Article, "sql/persons_price_check.sql", event_id, to_string(persons).unwrap()).fetch_all(e).await
+    sqlx::query_file_as!(intermediate::Article, "sql/persons_price_check.sql", event_id, persons.as_json()).fetch_all(e).await
         // TODO: attach actual price info
         .map(|v| v.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect())
         .map_err(Into::into)
