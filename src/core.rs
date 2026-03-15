@@ -1,14 +1,10 @@
 use rocket::{Rocket, Build, Request, Responder, catch, catchers};
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use rocket_db_pools::{Database, Connection as RocketConnection};
+use rocket_db_pools::Database;
 use serde::Serialize;
 
 use herald::Error;
-
-pub type Connection = RocketConnection<Herald>;
-pub type Result<T> = std::result::Result<T, HeraldResponseErr>;
-pub type Response<T> = Result<HeraldResponseOk<T>>;
 
 #[derive(Database)]
 #[database("herald")]

@@ -6,6 +6,21 @@ use crate::types::request::*;
 use crate::types::response::*;
 use crate::types::intermediate::{self, IntoIntermediate};
 
+pub async fn run_tests(e: &mut MySqlConnection, filter: &str) -> Result<UpstreamHealth> {
+    use std::time::{Instant, Duration};
+    let tic = Instant::now();
+    let tests = sqlx::query_file_as!(Test, "sql/health.sql", filter).fetch_all(e).await?;
+    let ping = tic.elapsed().div_duration_f32(Duration::from_millis(1));
+    Ok(UpstreamHealth {
+        ping: ping,
+        tests: tests,
+    })
+}
+
+pub async fn run_tests_health(e: &mut MySqlConnection) -> Result<UpstreamHealth> {
+    run_tests(e, "health").await
+}
+
 pub async fn event_exists(e: &mut MySqlConnection, event_id: &Uuid) -> Result<()> {
     if let None = sqlx::query_file_scalar!("sql/events/exists.sql", event_id).fetch_optional(e).await? {
         Err(Error::NotFound(event_id.as_hyphenated().to_string()))

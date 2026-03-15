@@ -3,34 +3,10 @@ use rocket::serde::json::Json;
 use uuid::Uuid;
 
 mod core;
-use crate::core::{Connection, Response};
 
 use herald::types::request::*;
-use herald::types::response::*;
 
-#[get("/health")]
-async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
-    use std::time::{Instant, Duration};
-    struct TestStatus {
-        test_name: String,
-        message: String,
-    }
-    let tic = Instant::now();
-    let tests: Vec<TestStatus> = sqlx::query_as!(
-            TestStatus,
-            "SELECT test_name, message FROM dolt_test_run('health') WHERE status <> 'PASS'",
-        )
-        .fetch_all(&mut **db).await.map_err(herald::Error::from)?;
-    let ping = tic.elapsed();
-    if tests.is_empty() {
-        Ok(UpstreamHealth {
-            ping: ping.div_duration_f32(Duration::from_millis(1)),
-        }.into())
-    } else {
-        todo!()
-    }
-}
-
+expose_endpoint!(#[get("/health")] run_tests_health);
 expose_endpoint!(#[get("/events/open")] get_open_events);
 expose_endpoint!(#[get("/events/types")] get_event_types);
 expose_endpoint!(#[get("/events/types/<event_type_slug>/items")] get_bookable_items, event_type_slug: &str);
@@ -41,7 +17,7 @@ expose_endpoint!(#[post("/events/<event_id>/registrations", format = "json", dat
 fn rocket() -> _ {
     core::build()
         .mount("/", routes![
-            check_health,
+            run_tests_health,
             get_open_events,
             get_event_types,
             get_bookable_items,
