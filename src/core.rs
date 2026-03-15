@@ -5,7 +5,8 @@ use rocket_db_pools::{Database, Connection as RocketConnection};
 use serde::Serialize;
 
 pub type Connection = RocketConnection<Herald>;
-pub type Response<T> = Result<HeraldResponseOk<T>, HeraldResponseErr>;
+pub type Result<T> = std::result::Result<T, HeraldResponseErr>;
+pub type Response<T> = Result<HeraldResponseOk<T>>;
 
 #[derive(Database)]
 #[database("herald")]
