@@ -27,28 +27,9 @@ pub fn build() -> Rocket<Build> {
 
 #[derive(Responder, Debug)]
 pub struct HeraldResponseOk<T>((Status, Json<HeraldResponseOkData<T>>));
-impl<T> HeraldResponseOk::<T> {
-    #[inline]
-    fn new(status: Status, data: T) -> Self {
-        Self((status, Json(HeraldResponseOkData::<T> {
-            status: status,
-            message: status.reason_lossy().to_string(),
-            data: data,
-        })))
-    }
-}
 
 #[derive(Responder, Debug)]
 pub struct HeraldResponseErr((Status, Json<HeraldResponseErrData>));
-impl HeraldResponseErr {
-    #[inline]
-    fn new(status: Status, message: String) -> Self {
-        Self((status, Json(HeraldResponseErrData {
-            status: status,
-            message: message,
-        })))
-    }
-}
 
 #[derive(Serialize, Debug)]
 struct HeraldResponseOkData<T> {
@@ -63,54 +44,93 @@ struct HeraldResponseErrData {
     message: String,
 }
 
-impl<T> From<T> for HeraldResponseOk<T> {
-    #[inline]
-    fn from(data: T) -> Self {
-        Self::new(Status::Ok, data)
-    }
-}
+// HeraldResponseOk implementations
 
 impl<T> From<(Status, T)> for HeraldResponseOk<T> {
     #[inline]
     fn from((status, data): (Status, T)) -> Self {
-        Self::new(status, data)
+        Self((status, Json((status, data).into())))
     }
 }
+
+impl<T> From<T> for HeraldResponseOk<T> {
+    #[inline]
+    fn from(data: T) -> Self {
+        (Status::Ok, data).into()
+    }
+}
+
+// HeraldResponseErr implementations
 
 impl From<Status> for HeraldResponseErr {
     #[inline]
     fn from(status: Status) -> Self {
-        Self::new(status, status.reason_lossy().to_string())
+        Self((status, Json(status.into())))
     }
 }
 
 impl From<(Status, String)> for HeraldResponseErr {
     #[inline]
     fn from((status, message): (Status, String)) -> Self {
-        Self::new(status, match status.reason() {
-            None => message,
-            Some(reason) => format!("{}: {}", reason, message),
-        })
+        Self((status, Json((status, message).into())))
     }
 }
 
 impl From<String> for HeraldResponseErr {
     #[inline]
     fn from(message: String) -> Self {
-        Self::from((Status::InternalServerError, message))
+        (Status::InternalServerError, message).into()
     }
 }
 
 impl From<(Status, &str)> for HeraldResponseErr {
     #[inline]
     fn from((status, message): (Status, &str)) -> Self {
-        Self::from((status, message.to_string()))
+        (status, message.to_string()).into()
     }
 }
 
 impl From<sqlx::Error> for HeraldResponseErr {
     #[inline]
     fn from(error: sqlx::Error) -> Self {
-        Self::new(Status::InternalServerError, format!("SQL Backend Error: {}", error.to_string()))
+        (Status::InternalServerError, format!("SQL Backend Error: {}", error.to_string())).into()
+    }
+}
+
+// HeraldResponseOkData implementations
+
+impl<T> From<(Status, T)> for HeraldResponseOkData<T> {
+    #[inline]
+    fn from((status, data): (Status, T)) -> Self {
+        Self {
+            status: status,
+            message: status.reason_lossy().to_string(),
+            data: data,
+        }
+    }
+}
+
+// HeraldResponseErrData implementations
+
+impl From<Status> for HeraldResponseErrData {
+    #[inline]
+    fn from(status: Status) -> Self {
+        Self {
+            status: status,
+            message: status.reason_lossy().to_string(),
+        }
+    }
+}
+
+impl From<(Status, String)> for HeraldResponseErrData {
+    #[inline]
+    fn from((status, message): (Status, String)) -> Self {
+        Self {
+            status: status,
+            message: match status.reason() {
+                None => message,
+                Some(reason) => format!("{}: {}", reason, message),
+            }
+        }
     }
 }
