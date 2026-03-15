@@ -61,3 +61,13 @@ pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, perso
         .map(|v| v.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect())
         .map_err(Into::into)
 }
+
+pub async fn create_registration(e: &mut MySqlConnection, event_id: &Uuid, registration: &NewRegistration) -> Result<()> {
+    event_exists(e, event_id).await?;
+    sqlx::query_file!("sql/events/registrations/01_begin.sql", event_id, registration.as_json()).execute(&mut *e).await?;
+    sqlx::query_file!("sql/events/registrations/02_persons.sql", registration.persons.as_json()).execute(&mut *e).await?;
+    sqlx::query_file!("sql/events/registrations/03_items.sql", registration.items.as_json()).execute(&mut *e).await?;
+    sqlx::query_file!("sql/events/registrations/04_finish.sql").execute(e).await
+        .map_err(Into::into)
+        .map(|_| ())
+}

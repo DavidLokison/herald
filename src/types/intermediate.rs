@@ -43,6 +43,27 @@ impl<T> IntoIntermediate for Vec<T> where T: IntoIntermediate {
     }
 }
 
+#[derive(Serialize)]
+pub struct NewPerson {
+    pub name: String,
+    pub birthday: Date,
+    pub address: String,
+    pub comment: String,
+    pub flags: super::NewPersonFlags,
+}
+
+#[derive(Serialize)]
+pub struct NewRegistration {
+    pub name: String,
+    pub address: String,
+    pub phone: String,
+    pub email: String,
+    pub comment: String,
+    pub emergency: super::EmergencyContact,
+}
+
+
+
 pub struct Article {
     pub id: String,
     pub description: String,
