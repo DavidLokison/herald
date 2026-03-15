@@ -53,14 +53,15 @@ pub struct HeraldResponseErr((Status, Json<HeraldResponseErrData>));
 #[derive(Serialize, Debug)]
 struct HeraldResponseOkData<T> {
     status: Status,
-    message: String,
+    reason: &'static str,
     data: T,
 }
 
 #[derive(Serialize, Debug)]
 struct HeraldResponseErrData {
     status: Status,
-    message: String,
+    reason: &'static str,
+    error: String,
 }
 
 // HeraldResponseOk implementations
@@ -90,15 +91,15 @@ impl From<Status> for HeraldResponseErr {
 
 impl From<(Status, String)> for HeraldResponseErr {
     #[inline]
-    fn from((status, message): (Status, String)) -> Self {
-        Self((status, Json((status, message).into())))
+    fn from((status, error): (Status, String)) -> Self {
+        Self((status, Json((status, error).into())))
     }
 }
 
 impl From<String> for HeraldResponseErr {
     #[inline]
-    fn from(message: String) -> Self {
-        (Status::InternalServerError, message).into()
+    fn from(error: String) -> Self {
+        (Status::InternalServerError, error).into()
     }
 }
 
@@ -129,7 +130,7 @@ impl<T> From<(Status, T)> for HeraldResponseOkData<T> {
     fn from((status, data): (Status, T)) -> Self {
         Self {
             status: status,
-            message: status.reason_lossy().to_string(),
+            reason: status.reason_lossy(),
             data: data,
         }
     }
@@ -140,22 +141,17 @@ impl<T> From<(Status, T)> for HeraldResponseOkData<T> {
 impl From<Status> for HeraldResponseErrData {
     #[inline]
     fn from(status: Status) -> Self {
-        Self {
-            status: status,
-            message: status.reason_lossy().to_string(),
-        }
+        (status, "".to_string()).into()
     }
 }
 
 impl From<(Status, String)> for HeraldResponseErrData {
     #[inline]
-    fn from((status, message): (Status, String)) -> Self {
+    fn from((status, error): (Status, String)) -> Self {
         Self {
             status: status,
-            message: match status.reason() {
-                None => message,
-                Some(reason) => format!("{}: {}", reason, message),
-            }
+            reason: status.reason_lossy(),
+            error: error,
         }
     }
 }
