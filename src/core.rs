@@ -4,6 +4,8 @@ use rocket::serde::json::Json;
 use rocket_db_pools::{Database, Connection as RocketConnection};
 use serde::Serialize;
 
+use herald::Error;
+
 pub type Connection = RocketConnection<Herald>;
 pub type Result<T> = std::result::Result<T, HeraldResponseErr>;
 pub type Response<T> = Result<HeraldResponseOk<T>>;
@@ -21,6 +23,23 @@ pub fn build() -> Rocket<Build> {
     rocket::build()
         .attach(Herald::init())
         .register("/", catchers![default])
+}
+
+#[macro_export]
+macro_rules! expose_endpoint {
+    ($(#[$meta:meta])* $name:ident -> $T:ty) => {
+        $(#[$meta])*
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+            herald::data::$name(&mut db).await.map(Into::into).map_err(Into::into)
+        }
+    };
+
+    ($(#[$meta:meta])* $name:ident -> $T:ty, $($arg:ident : $A:ty),*) => {
+        $(#[$meta])*
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>, $($arg: $A),*) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+            herald::data::$name(&mut db, $(&$arg),*).await.map(Into::into).map_err(Into::into)
+        }
+    };
 }
 
 
@@ -90,10 +109,16 @@ impl From<(Status, &str)> for HeraldResponseErr {
     }
 }
 
-impl From<sqlx::Error> for HeraldResponseErr {
+impl From<Error> for HeraldResponseErr {
     #[inline]
-    fn from(error: sqlx::Error) -> Self {
-        (Status::InternalServerError, format!("SQL Backend Error: {}", error.to_string())).into()
+    fn from(error: Error) -> Self {
+        (
+            match error {
+                Error::NotFound(_) => Status::NotFound,
+                Error::SqlxError(_) => Status::InternalServerError,
+            },
+            error.to_string(),
+        ).into()
     }
 }
 

@@ -3,10 +3,9 @@ use rocket::serde::json::Json;
 use uuid::Uuid;
 
 mod core;
-mod data;
-mod types;
 use crate::core::{Connection, Response};
-use crate::types::*;
+
+use herald::types::*;
 
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
@@ -20,7 +19,7 @@ async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
             TestStatus,
             "SELECT test_name, message FROM dolt_test_run('health') WHERE status <> 'PASS'",
         )
-        .fetch_all(&mut **db).await?;
+        .fetch_all(&mut **db).await.map_err(herald::Error::from)?;
     let ping = tic.elapsed();
     if tests.is_empty() {
         Ok(UpstreamHealth {
