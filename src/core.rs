@@ -12,6 +12,44 @@ pub type Response<T> = Result<HeraldResponseOk<T>>;
 #[database("herald")]
 pub struct Herald(sqlx::MySqlPool);
 
+#[catch(default)]
+pub fn default(status: Status, _req: &Request) -> HeraldResponseErr {
+    status.into()
+}
+
+pub fn build() -> Rocket<Build> {
+    rocket::build()
+        .attach(Herald::init())
+        .register("/", catchers![default])
+}
+
+
+
+#[derive(Responder, Debug)]
+pub struct HeraldResponseOk<T>((Status, Json<HeraldResponseOkData<T>>));
+impl<T> HeraldResponseOk::<T> {
+    #[inline]
+    fn new(status: Status, data: T) -> Self {
+        Self((status, Json(HeraldResponseOkData::<T> {
+            status: status,
+            message: status.reason_lossy().to_string(),
+            data: data,
+        })))
+    }
+}
+
+#[derive(Responder, Debug)]
+pub struct HeraldResponseErr((Status, Json<HeraldResponseErrData>));
+impl HeraldResponseErr {
+    #[inline]
+    fn new(status: Status, message: String) -> Self {
+        Self((status, Json(HeraldResponseErrData {
+            status: status,
+            message: message,
+        })))
+    }
+}
+
 #[derive(Serialize, Debug)]
 struct HeraldResponseOkData<T> {
     status: Status,
@@ -25,18 +63,6 @@ struct HeraldResponseErrData {
     message: String,
 }
 
-#[derive(Responder, Debug)]
-pub struct HeraldResponseOk<T>((Status, Json<HeraldResponseOkData<T>>));
-impl<T> HeraldResponseOk::<T> {
-    fn new(status: Status, data: T) -> Self {
-        Self((status, Json(HeraldResponseOkData::<T> {
-            status: status,
-            message: status.reason_lossy().to_string(),
-            data: data,
-        })))
-    }
-}
-
 impl<T> From<T> for HeraldResponseOk<T> {
     #[inline]
     fn from(data: T) -> Self {
@@ -48,17 +74,6 @@ impl<T> From<(Status, T)> for HeraldResponseOk<T> {
     #[inline]
     fn from((status, data): (Status, T)) -> Self {
         Self::new(status, data)
-    }
-}
-
-#[derive(Responder, Debug)]
-pub struct HeraldResponseErr((Status, Json<HeraldResponseErrData>));
-impl HeraldResponseErr {
-    fn new(status: Status, message: String) -> Self {
-        Self((status, Json(HeraldResponseErrData {
-            status: status,
-            message: message,
-        })))
     }
 }
 
@@ -98,15 +113,4 @@ impl From<sqlx::Error> for HeraldResponseErr {
     fn from(error: sqlx::Error) -> Self {
         Self::new(Status::InternalServerError, format!("SQL Backend Error: {}", error.to_string()))
     }
-}
-
-#[catch(default)]
-pub fn default(status: Status, _req: &Request) -> HeraldResponseErr {
-    status.into()
-}
-
-pub fn build() -> Rocket<Build> {
-    rocket::build()
-        .attach(Herald::init())
-        .register("/", catchers![default])
 }
