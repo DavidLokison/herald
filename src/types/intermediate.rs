@@ -1,6 +1,9 @@
 use serde::Serialize;
 use time::Date;
 
+use super::request;
+use super::response;
+
 #[macro_export]
 macro_rules! impl_intermediate {
     ($T:ty) => {
@@ -49,7 +52,7 @@ pub struct NewPerson {
     pub birthday: Date,
     pub address: String,
     pub comment: String,
-    pub flags: super::NewPersonFlags,
+    pub flags: request::NewPersonFlags,
 }
 
 #[derive(Serialize)]
@@ -59,7 +62,7 @@ pub struct NewRegistration {
     pub phone: String,
     pub email: String,
     pub comment: String,
-    pub emergency: super::EmergencyContact,
+    pub emergency: request::EmergencyContact,
 }
 
 
@@ -71,11 +74,11 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn with_price_info(self, decimals: u8, currency: String) -> super::Article {
-        super::Article {
+    pub fn with_price_info(self, decimals: u8, currency: String) -> response::Article {
+        response::Article {
             id: self.id,
             description: self.description,
-            price: super::Price {
+            price: response::Price {
                 value: self.price,
                 decimals: decimals,
                 currency: currency,

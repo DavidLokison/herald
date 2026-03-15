@@ -2,7 +2,8 @@ use sqlx::MySqlConnection;
 use uuid::Uuid;
 
 use crate::{Result, Error};
-use crate::types::*;
+use crate::types::request::*;
+use crate::types::response::*;
 use crate::types::intermediate::{self, IntoIntermediate};
 
 pub async fn event_exists(e: &mut MySqlConnection, event_id: &Uuid) -> Result<()> {

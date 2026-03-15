@@ -5,7 +5,8 @@ use uuid::Uuid;
 mod core;
 use crate::core::{Connection, Response};
 
-use herald::types::*;
+use herald::types::request::*;
+use herald::types::response::*;
 
 #[get("/health")]
 async fn check_health(mut db: Connection) -> Response<UpstreamHealth> {
