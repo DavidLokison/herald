@@ -27,16 +27,16 @@ pub fn build() -> Rocket<Build> {
 
 #[macro_export]
 macro_rules! expose_endpoint {
-    ($(#[$meta:meta])* $name:ident -> $T:ty) => {
+    ($(#[$meta:meta])* $name:ident) => {
         $(#[$meta])*
-        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>) -> std::result::Result<crate::core::HeraldResponseOk<impl serde::Serialize>, crate::core::HeraldResponseErr> {
             herald::data::$name(&mut db).await.map(Into::into).map_err(Into::into)
         }
     };
 
-    ($(#[$meta:meta])* $name:ident -> $T:ty, $($arg:ident : $A:ty),*) => {
+    ($(#[$meta:meta])* $name:ident, $($arg:ident : $A:ty),*) => {
         $(#[$meta])*
-        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>, $($arg: $A),*) -> Result<crate::core::HeraldResponseOk<$T>, crate::core::HeraldResponseErr> {
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald>, $($arg: $A),*) -> std::result::Result<crate::core::HeraldResponseOk<impl serde::Serialize>, crate::core::HeraldResponseErr> {
             herald::data::$name(&mut db, $(&$arg),*).await.map(Into::into).map_err(Into::into)
         }
     };
