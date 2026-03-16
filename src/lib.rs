@@ -14,7 +14,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self {
             Self::NotFound(s) => write!(f, "Resource Not Found: {}", s),
-            Self::SqlxError(e) => write!(f, "SQL Backend Error: {}", e.to_string()),
+            Self::SqlxError(_) => write!(f, "SQL Backend Error"),
         }
     }
 }
