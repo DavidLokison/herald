@@ -115,3 +115,25 @@ impl Article {
         }
     }
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::IntoIntermediate;
+
+    #[test]
+    fn intermediate_borrow_date() {
+        use time::macros::date;
+        let date = date!(2022-04-19);
+        let date_int = date.into_intermediate();
+        assert!(std::ptr::eq(&date, date_int));
+    }
+
+    #[test]
+    fn intermediate_borrow_str() {
+        let s = "Hello World";
+        let s_int = s.into_intermediate();
+        assert!(std::ptr::eq(s, s_int));
+    }
+}
