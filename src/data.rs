@@ -63,7 +63,7 @@ pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, perso
     Ok(articles)
 }
 
-pub async fn create_registration(e: &mut MySqlConnection, event_id: &Uuid, registration: &NewRegistration) -> Result<()> {
+pub async fn create_registration(e: &mut MySqlConnection, event_id: &Uuid, registration: &NewRegistration<'_>) -> Result<()> {
     event_exists(e, event_id).await?;
     sqlx::query_file!("sql/events/registrations/01_begin.sql", event_id, registration.as_json()).execute(&mut *e).await?;
     sqlx::query_file!("sql/events/registrations/02_persons.sql", registration.persons.as_json()).execute(&mut *e).await?;

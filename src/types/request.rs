@@ -4,28 +4,29 @@ use time::Date;
 use super::intermediate::{self, IntoIntermediate};
 use crate::impl_intermediate;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PriceCheck {
     pub birthday: Date,
     pub team: bool,
 }
-impl_intermediate!(PriceCheck);
+
+impl_intermediate!(PriceCheck => &);
 
 #[derive(Deserialize, Debug)]
-pub struct NewRegistration {
-    pub name: NewName,
-    pub address: NewAddress,
-    pub phone: String,
-    pub email: String,
-    pub comment: String,
-    pub emergency: EmergencyContact,
-    pub persons: Vec<NewPerson>,
-    pub items: Vec<NewItem>,
+pub struct NewRegistration<'r> {
+    pub name: NewName<'r>,
+    pub address: NewAddress<'r>,
+    pub phone: &'r str,
+    pub email: &'r str,
+    pub comment: &'r str,
+    pub emergency: EmergencyContact<'r>,
+    pub persons: Vec<NewPerson<'r>>,
+    pub items: Vec<NewItem<'r>>,
 }
 
-impl IntoIntermediate for NewRegistration {
-    type Intermediate = intermediate::NewRegistration;
-    fn into_intermediate(&self) -> Self::Intermediate {
+impl<'r> IntoIntermediate<'r> for NewRegistration<'r> {
+    type Intermediate = intermediate::NewRegistration<'r>;
+    fn into_intermediate(&'r self) -> Self::Intermediate {
         Self::Intermediate {
             name: self.name.into_intermediate(),
             address: self.address.into_intermediate(),
@@ -38,17 +39,17 @@ impl IntoIntermediate for NewRegistration {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct NewPerson {
-    pub name: NewName,
-    pub address: NewAddress,
+pub struct NewPerson<'r> {
+    pub name: NewName<'r>,
+    pub address: NewAddress<'r>,
     pub birthday: Date,
-    pub comment: String,
+    pub comment: &'r str,
     pub flags: NewPersonFlags,
 }
 
-impl IntoIntermediate for NewPerson {
-    type Intermediate = intermediate::NewPerson;
-    fn into_intermediate(&self) -> Self::Intermediate {
+impl<'r> IntoIntermediate<'r> for NewPerson<'r> {
+    type Intermediate = intermediate::NewPerson<'r>;
+    fn into_intermediate(&'r self) -> Self::Intermediate {
         Self::Intermediate {
             name: self.name.into_intermediate(),
             birthday: self.birthday.into_intermediate(),
@@ -59,44 +60,44 @@ impl IntoIntermediate for NewPerson {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewItem {
-    pub article_id: String,
-    pub comment: String,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NewItem<'r> {
+    pub article_id: &'r str,
+    pub comment: &'r str,
 }
 
-impl_intermediate!(NewItem);
+impl_intermediate!(NewItem<'r> => &);
 
 #[derive(Deserialize, Debug)]
-pub struct NewName {
-    pub title: String,
-    pub firstname: String,
-    pub lastname: String,
+pub struct NewName<'r> {
+    pub title: &'r str,
+    pub firstname: &'r str,
+    pub lastname: &'r str,
 }
 
-impl_intermediate!(NewName => "{}\t{}\t{}", title, firstname, lastname);
+impl_intermediate!(NewName<'r> => "{}\t{}\t{}", title, firstname, lastname);
 
 #[derive(Deserialize, Debug)]
-pub struct NewAddress {
-    pub street: String,
-    pub zip: String,
-    pub city: String,
+pub struct NewAddress<'r> {
+    pub street: &'r str,
+    pub zip: &'r str,
+    pub city: &'r str,
 }
 
-impl_intermediate!(NewAddress => "{}\n{} {}", street, zip, city);
+impl_intermediate!(NewAddress<'r> => "{}\n{} {}", street, zip, city);
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NewPersonFlags {
     pub vegetarian: bool,
     pub team: bool,
 }
 
-impl_intermediate!(NewPersonFlags);
+impl_intermediate!(NewPersonFlags => &);
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EmergencyContact {
-    pub name: String,
-    pub phone: String,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EmergencyContact<'r> {
+    pub name: &'r str,
+    pub phone: &'r str,
 }
 
-impl_intermediate!(EmergencyContact);
+impl_intermediate!(EmergencyContact<'r> => &);
