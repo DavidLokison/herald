@@ -4,7 +4,6 @@ use time::Date;
 use super::request;
 use super::response;
 
-#[macro_export]
 macro_rules! impl_intermediate {
     ($T:ident) => {
         impl IntoIntermediate<'_> for $T {
@@ -55,6 +54,7 @@ macro_rules! impl_intermediate {
         }
     };
 }
+pub(crate) use impl_intermediate;
 
 pub trait IntoIntermediate<'s> {
     type Intermediate: Serialize;

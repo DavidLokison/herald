@@ -55,7 +55,7 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>> {
         .map_err(Into::into)
 }
 
-pub async fn check_persons_price(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheck>) -> Result<Vec<Article>> {
+pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &Uuid, persons: &Vec<PriceCheck>) -> Result<Vec<Article>> {
     event_exists(e, event_id).await?;
     let articles = sqlx::query_file_as!(intermediate::Article, "sql/events/registrations/00_checkup.sql", event_id, persons.as_json()).fetch_all(e).await?;
     // TODO: attach actual price info

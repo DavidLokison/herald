@@ -6,6 +6,8 @@ use serde::Serialize;
 
 use herald::Error;
 
+pub type Result<T> = std::result::Result<HeraldResponseOk<T>, HeraldResponseErr>;
+
 #[derive(Database)]
 #[database("herald")]
 pub struct Herald(sqlx::MySqlPool);

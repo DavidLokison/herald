@@ -1,10 +1,14 @@
 use serde::{Serialize, Deserialize};
+use rocket::form::FromForm;
 use time::Date;
 
-use super::intermediate::{self, IntoIntermediate};
-use crate::impl_intermediate;
+use super::intermediate::{
+    self,
+    impl_intermediate,
+    IntoIntermediate
+};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(FromForm, Serialize, Debug)]
 pub struct PriceCheck {
     pub birthday: Date,
     pub team: bool,
