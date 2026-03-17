@@ -1,11 +1,13 @@
 use rocket::{get, post, launch, routes};
+use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket_db_pools::Connection;
 use uuid::Uuid;
 
 mod core;
-use core::{Herald, Result};
+use core::{Herald, Result, wrap};
 
+use herald::data;
 use herald::types::request::*;
 
 expose_endpoint!(#[get("/health")] run_tests_health);
@@ -21,7 +23,13 @@ async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, pe
         .map_err(Into::into)
 }
 
-expose_endpoint!(#[post("/events/<event_id>/registrations", format = "json", data = "<registration>")] create_registration, event_id: Uuid, registration: Json<NewRegistration<'_>>);
+#[post("/events/<event_id>/registrations", data = "<registration>")]
+async fn create_registration(mut db: Connection<Herald>, event_id: Uuid, registration: Json<NewRegistration<'_>>) -> Result<()> {
+    data::create_registration(&mut db, &event_id, &registration).await
+        .map(wrap(Status::Created))
+        .map(Into::into)
+        .map_err(Into::into)
+}
 
 #[launch]
 fn rocket() -> _ {

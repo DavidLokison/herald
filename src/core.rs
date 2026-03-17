@@ -33,6 +33,9 @@ macro_rules! expose_endpoint {
     };
 }
 
+pub fn wrap<T>(s: Status) -> impl Fn(T) -> (Status, T) {
+    move |v: T| (s, v)
+}
 
 
 #[derive(Responder, Debug)]
