@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT 1 FROM events WHERE event_id = ?\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "1",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 255,
+          "max_size": 4
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ffc7774f53d131a0ca9e3f7fa1339301fdcd50711329bd44d4be6b242bca5a4f"
+}

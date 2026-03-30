@@ -1,0 +1,25 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT event_type_slug\nFROM event_types\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "event_type_slug",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL",
+          "char_set": 255,
+          "max_size": 3
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a77c42601e0555e5241ad36d2ad5ec2b215b800c7748b1fd8dbc74626273b9a5"
+}

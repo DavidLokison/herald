@@ -1,0 +1,47 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT test_name as name, status, message\nFROM dolt_test_run(?)\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL",
+          "char_set": 255,
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "status",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL",
+          "char_set": 255,
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "message",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL",
+          "char_set": 255,
+          "max_size": 262140
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "99c020c74e5429e6f4e1f68d37fba0cda5b1c74029350c6f4a1048fcaa5cb7e1"
+}

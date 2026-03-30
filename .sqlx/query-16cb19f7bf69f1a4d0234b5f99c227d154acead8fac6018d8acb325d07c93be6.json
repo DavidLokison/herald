@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE registrations\nSET status = (\n    SELECT status\n    FROM registration_statuses\n    WHERE status_slug = \"awaiting_approval\"\n)\nWHERE registration_id = @RegistrationId\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "16cb19f7bf69f1a4d0234b5f99c227d154acead8fac6018d8acb325d07c93be6"
+}
