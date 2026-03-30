@@ -18,7 +18,16 @@ pub fn default(status: Status, _req: &Request) -> HeraldResponseErr {
 }
 
 pub fn build() -> Rocket<Build> {
-    rocket::build()
+    let _ = dotenv::from_path(std::env::current_dir().unwrap().join(".env"));
+    rocket::custom(rocket::Config::figment()
+        .merge(("databases.herald", rocket_db_pools::Config {
+            url: std::env::var("DATABASE_URL").expect("DATABASE_URL should be specified by the environment or .env file"),
+            min_connections: None,
+            max_connections: 1024,
+            connect_timeout: 3,
+            idle_timeout: None,
+            ..Default::default()
+        })))
         .attach(Herald::init())
         .register("/", catchers![default])
 }
