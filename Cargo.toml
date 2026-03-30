@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dotenv = "0.15.0"
 rocket = { version = "0.5.1", features = ["json", "tls", "uuid"] }
 rocket_db_pools = { version = "0.2.0", features = ["sqlx_mysql"] }
 serde = { version = "1.0.228", features = ["derive"] }
@@ -12,4 +13,4 @@ time = { version = "0.3.47", features = ["serde", "serde-human-readable"] }
 uuid = { version = "1.21.0", features = ["serde"] }
 
 [dev-dependencies]
-testcontainers = "0.27.2"
+testcontainers = { version = "0.27.2", features = ["blocking"] }
