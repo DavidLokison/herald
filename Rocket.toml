@@ -1,2 +1,0 @@
-[default.databases.herald]
-url = "mysql://root@localhost:3306/herald"
