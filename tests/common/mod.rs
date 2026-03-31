@@ -30,19 +30,25 @@ pub struct TestSuite {
 
 impl TestSuite {
     pub fn spawn() -> Self {
-        let sql_server = GenericImage::new("localhost/herald/dolt-sql-server", "latest")
+        let sql_server = GenericBuildableImage::new("localhost/herald/dolt-sql-server", "latest")
+            .with_dockerfile_string(
+                r#"FROM dolthub/dolt-sql-server:1.84.0
+                RUN dolt clone --depth 1 besiedlungszug/herald"#
+            )
+            .build_image()
+            .unwrap()
             .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
             .with_network("herald")
             .with_env_var("DOLT_ROOT_HOST", "%")
             .start()
-            .expect("Failed to start dolt sql-server");
+            .unwrap();
         let mut ip = String::new();
         sql_server.exec(ExecCommand::new(["hostname", "-I"]))
-            .expect("freshly spawned container should accept exec")
+            .unwrap()
             .stdout()
             .read_to_string(&mut ip)
-            .expect("command buffer should be parseable");
-        let rocket = GenericBuildableImage::new("localhost/herald/rocket-test", "latest")
+            .unwrap();
+        let rocket = GenericBuildableImage::new("localhost/herald/rocket", "latest")
             .with_dockerfile_string(
                 r#"FROM debian:stable-slim
                 COPY ./herald /usr/local/bin/
@@ -50,14 +56,14 @@ impl TestSuite {
             )
             .with_file(env!("CARGO_BIN_EXE_herald"), "./herald")
             .build_image()
-            .expect("Failed to build test image")
+            .unwrap()
             .with_exposed_port(8000.tcp())
             .with_wait_for(WaitFor::message_on_stdout("Rocket has launched from http://0.0.0.0:8000"))
             .with_network("herald")
             .with_env_var("DATABASE_URL", format!("mysql://root@{}:3306/herald", ip.trim()))
             .with_env_var("ROCKET_ADDRESS", "0.0.0.0")
             .start()
-            .expect("Failed to start rocket");
+            .unwrap();
         TestSuite {
             sql_server: SqlServerContainer(sql_server),
             rocket: rocket,
