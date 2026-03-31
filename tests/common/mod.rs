@@ -64,7 +64,11 @@ impl TestSuite {
         }
     }
 
-    pub fn port(&self) -> u16 {
+    pub fn path(&self, path: &str) -> String {
+        format!("http://localhost:{}{}", self.port(), path)
+    }
+
+    fn port(&self) -> u16 {
         self.rocket.get_host_port_ipv4(8000).expect("test suite rocket runner should expose port 8000")
     }
 }
