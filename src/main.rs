@@ -20,9 +20,6 @@ expose_endpoint!(#[get("/events/types")] get_event_types);
 async fn get_bookable_items(mut db: Connection<Herald>, event_type_slug: &str) -> Result<Vec<Article>> {
     let event_type_slug = EventTypeSlug::try_query(&mut **db, event_type_slug).await?;
     let articles = herald::data::get_bookable_items(&mut db, &event_type_slug).await?;
-    if articles.is_empty() {
-        return Ok((Status::NoContent, articles).into());
-    }
     Ok(articles.into())
 }
 
