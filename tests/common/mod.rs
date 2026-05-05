@@ -30,13 +30,7 @@ pub struct TestSuite {
 
 impl TestSuite {
     pub fn spawn() -> Self {
-        let sql_server = GenericBuildableImage::new("localhost/herald/dolt-sql-server", "latest")
-            .with_dockerfile_string(
-                r#"FROM dolthub/dolt-sql-server:1.84.0
-                RUN dolt clone --depth 1 besiedlungszug/herald"#
-            )
-            .build_image()
-            .unwrap()
+        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.1.2")
             .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
             .with_network("herald")
             .with_env_var("DOLT_ROOT_HOST", "%")
