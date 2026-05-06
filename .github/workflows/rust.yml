@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: cargo build --locked --verbose
       - name: Clean Project
-        run: cargo clean --locked --project=${{ needs.get-project-name.outputs.name }}
+        run: cargo clean --locked --package=${{ needs.get-project-name.outputs.name }}
   test:
     name: Test Binary
     needs: get-project-name
@@ -69,4 +69,4 @@ jobs:
       - name: Run tests
         run: cargo test --locked --verbose
       - name: Clean Project
-        run: cargo clean --locked --project=${{ needs.get-project-name.outputs.name }}
+        run: cargo clean --locked --package=${{ needs.get-project-name.outputs.name }}
