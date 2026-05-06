@@ -1,19 +1,19 @@
-use rocket::{Rocket, Build, Request, Responder, catch, catchers};
+use std::hash::Hash;
+
+use rocket::{Rocket, Build, Request, response::Responder, catch, catchers};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket_db_pools::Database;
 use serde::Serialize;
 
-use herald::Error;
-
-pub type Result<T> = std::result::Result<HeraldResponseOk<T>, HeraldResponseErr>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Database)]
 #[database("herald")]
 pub struct Herald(sqlx::MySqlPool);
 
 #[catch(default)]
-pub fn default(status: Status, _req: &Request) -> HeraldResponseErr {
+pub fn default(status: Status, _req: &Request) -> Error {
     status.into()
 }
 
@@ -36,125 +36,121 @@ pub fn build() -> Rocket<Build> {
 macro_rules! expose_endpoint {
     ($(#[$meta:meta])* $name:ident $(,$arg:ident : $A:ty)*) => {
         $(#[$meta])*
-        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald> $(,$arg: $A)*) -> std::result::Result<crate::core::HeraldResponseOk<impl serde::Serialize>, crate::core::HeraldResponseErr> {
-            herald::data::$name(&mut db $(,&$arg)*).await.map(Into::into).map_err(Into::into)
+        async fn $name(mut db: rocket_db_pools::Connection<crate::core::Herald> $(,$arg: $A)*) -> std::result::Result<crate::core::Custom<impl serde::Serialize>, crate::core::Error> {
+            let ret = herald::data::$name(&mut db $(,&$arg)*).await?;
+            crate::core::Custom::ok(ret)
         }
     };
 }
 
-pub fn wrap<T>(s: Status) -> impl Fn(T) -> (Status, T) {
-    move |v: T| (s, v)
+pub struct Created<T: Serialize + Hash> {
+    location: String,
+    data: T,
 }
 
-
-#[derive(Responder, Debug)]
-pub struct HeraldResponseOk<T>((Status, Json<HeraldResponseOkData<T>>));
-
-#[derive(Responder, Debug)]
-pub struct HeraldResponseErr((Status, Json<HeraldResponseErrData>));
-
 #[derive(Serialize, Debug)]
-struct HeraldResponseOkData<T> {
+pub struct Custom<T: Serialize> {
     status: Status,
     reason: &'static str,
     data: T,
 }
 
 #[derive(Serialize, Debug)]
-struct HeraldResponseErrData {
+pub struct Error {
     status: Status,
     reason: &'static str,
     error: String,
 }
 
-// HeraldResponseOk implementations
+// Created implementations
 
-impl<T> From<(Status, T)> for HeraldResponseOk<T> {
-    #[inline]
-    fn from((status, data): (Status, T)) -> Self {
-        Self((status, Json((status, data).into())))
+impl<T: Serialize + Hash> Created<T> {
+    fn new<S: Into<String>>(location: S, data: T) -> Self {
+        Self {
+            location: location.into(),
+            data: data,
+        }
+    }
+
+    pub fn ok<S: Into<String>>(location: S, data: T) -> Result<Self> {
+        Ok(Self::new(location, data))
     }
 }
 
-impl<T> From<T> for HeraldResponseOk<T> {
-    #[inline]
-    fn from(data: T) -> Self {
-        (Status::Ok, data).into()
+impl<'r, 'o: 'r, T: Serialize + Hash> Responder<'r, 'o> for Created<T> {
+    fn respond_to(self, req: &'r Request<'_>) -> rocket::response::Result<'o> {
+        let mut response = rocket::response::Response::build();
+        let created = rocket::response::status::Created::new(self.location).tagged_body(Json(&self.data));
+        response.merge(created.respond_to(req)?);
+        response.merge(Custom::new(Status::Created, self.data).respond_to(req)?);
+        response.ok()
     }
 }
 
-// HeraldResponseErr implementations
+// Custom implementations
 
-impl From<Status> for HeraldResponseErr {
-    #[inline]
-    fn from(status: Status) -> Self {
-        Self((status, Json(status.into())))
-    }
-}
-
-impl From<(Status, String)> for HeraldResponseErr {
-    #[inline]
-    fn from((status, error): (Status, String)) -> Self {
-        Self((status, Json((status, error).into())))
-    }
-}
-
-impl From<String> for HeraldResponseErr {
-    #[inline]
-    fn from(error: String) -> Self {
-        (Status::InternalServerError, error).into()
-    }
-}
-
-impl From<(Status, &str)> for HeraldResponseErr {
-    #[inline]
-    fn from((status, message): (Status, &str)) -> Self {
-        (status, message.to_string()).into()
-    }
-}
-
-impl From<Error> for HeraldResponseErr {
-    #[inline]
-    fn from(error: Error) -> Self {
-        (
-            match error {
-                Error::NotFound(_) => Status::NotFound,
-                Error::SqlxError(_) => Status::InternalServerError,
-            },
-            error.to_string(),
-        ).into()
-    }
-}
-
-// HeraldResponseOkData implementations
-
-impl<T> From<(Status, T)> for HeraldResponseOkData<T> {
-    #[inline]
-    fn from((status, data): (Status, T)) -> Self {
+impl<T: Serialize> Custom<T> {
+    fn new(status: Status, data: T) -> Self {
         Self {
             status: status,
             reason: status.reason_lossy(),
             data: data,
         }
     }
-}
 
-// HeraldResponseErrData implementations
-
-impl From<Status> for HeraldResponseErrData {
-    #[inline]
-    fn from(status: Status) -> Self {
-        (status, "".to_string()).into()
+    pub fn ok(data: T) -> Result<Self> {
+        Ok(Self::new(Status::Ok, data))
     }
 }
 
-impl From<(Status, String)> for HeraldResponseErrData {
+impl<'r, 'o: 'r, T: Serialize> Responder<'r, 'o> for Custom<T> {
     #[inline]
-    fn from((status, error): (Status, String)) -> Self {
+    fn respond_to(self, r: &'r Request<'_>) -> rocket::response::Result<'o> {
+        (self.status, Json(self)).respond_to(r)
+    }
+}
+
+// Error implementations
+
+impl Error {
+    fn new<S: Into<String>>(status: Status, error: S) -> Self {
         Self {
             status: status,
             reason: status.reason_lossy(),
-            error: error,
+            error: error.into(),
         }
+    }
+}
+
+impl From<Status> for Error {
+    #[inline]
+    fn from(status: Status) -> Self {
+        Self::new(status, "")
+    }
+}
+
+impl From<String> for Error {
+    #[inline]
+    fn from(error: String) -> Self {
+        Self::new(Status::InternalServerError, error)
+    }
+}
+
+impl From<herald::Error> for Error {
+    fn from(error: herald::Error) -> Self {
+        Self::new(
+            match error {
+                herald::Error::NotFound(_) => Status::NotFound,
+                herald::Error::SqlxError(_) => Status::InternalServerError,
+            },
+            error.to_string(),
+        )
+    }
+}
+
+impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
+    #[inline]
+    fn respond_to(self, r: &'r Request<'_>) -> rocket::response::Result<'o> {
+        (self.status, Json(self)).respond_to(r)
     }
 }
