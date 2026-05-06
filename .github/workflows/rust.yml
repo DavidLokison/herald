@@ -1,0 +1,51 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  get-project-name:
+    name: Get Package Name
+    runs-on: ubuntu-22.04
+    outputs:
+      name: ${{ steps.get_name.outputs.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Get Name
+        id: get_name
+        run: |
+          NAME=$(cargo metadata --locked --no-deps --format-version=1 | jq '.packages[] | .name' -r)
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    name: Build and Test Package
+    needs: get-project-name
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Cache Registry
+        id: cache-registry
+        uses: actions/cache@v5
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          path: ~/.cargo
+      - name: Cache Dependency Builds
+        id: cache-deps
+        uses: actions/cache@v5
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-deps
+          path: target
+      - name: Build
+        run: cargo build --locked --verbose
+      - name: Test
+        run: cargo test --locked --verbose
+      - name: Clean Package
+        run: cargo clean --locked --package=${{ needs.get-project-name.outputs.name }}
