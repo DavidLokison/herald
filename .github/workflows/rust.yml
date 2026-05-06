@@ -21,7 +21,7 @@ jobs:
       - name: Get Name
         id: get_name
         run: |
-          NAME=$(cargo metadata --no-deps --format-version=1 | jq '.packages[] | .name' -r)
+          NAME=$(cargo metadata --locked --no-deps --format-version=1 | jq '.packages[] | .name' -r)
           echo "name=$NAME" >> $GITHUB_OUTPUT
 
   build:
@@ -44,9 +44,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-deps
           path: target
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --locked --verbose
       - name: Clean Project
-        run: cargo clean --project=${{ needs.get-project-name.outputs.name }}
+        run: cargo clean --locked --project=${{ needs.get-project-name.outputs.name }}
   test:
     name: Test Binary
     needs: get-project-name
@@ -67,6 +67,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-test-deps
           path: target
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --locked --verbose
       - name: Clean Project
-        run: cargo clean --project=${{ needs.get-project-name.outputs.name }}
+        run: cargo clean --locked --project=${{ needs.get-project-name.outputs.name }}
