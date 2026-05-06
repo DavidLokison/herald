@@ -11,7 +11,7 @@ env:
 
 jobs:
   get-project-name:
-    name: Get Project Name
+    name: Get Package Name
     runs-on: ubuntu-22.04
     outputs:
       name: ${{ steps.get_name.outputs.name }}
@@ -24,8 +24,8 @@ jobs:
           NAME=$(cargo metadata --locked --no-deps --format-version=1 | jq '.packages[] | .name' -r)
           echo "name=$NAME" >> $GITHUB_OUTPUT
 
-  build:
-    name: Build Binary
+  build-and-test:
+    name: Build and Test Package
     needs: get-project-name
     runs-on: ubuntu-22.04
     steps:
@@ -45,28 +45,7 @@ jobs:
           path: target
       - name: Build
         run: cargo build --locked --verbose
-      - name: Clean Project
-        run: cargo clean --locked --package=${{ needs.get-project-name.outputs.name }}
-  test:
-    name: Test Binary
-    needs: get-project-name
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Cache Registry
-        id: cache-registry
-        uses: actions/cache@v5
-        with:
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-test
-          path: ~/.cargo
-      - name: Cache Dependency Builds
-        id: cache-deps
-        uses: actions/cache@v5
-        with:
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-test-deps
-          path: target
-      - name: Run tests
+      - name: Test
         run: cargo test --locked --verbose
-      - name: Clean Project
+      - name: Clean Package
         run: cargo clean --locked --package=${{ needs.get-project-name.outputs.name }}
