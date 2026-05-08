@@ -1,0 +1,4 @@
+[env]
+# Local database schema for query macro features
+DATABASE_URL = "mysql://root@localhost:3306/herald"
+SQLX_OFFLINE = "true"
