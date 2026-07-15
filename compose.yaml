@@ -1,0 +1,12 @@
+name: herald
+
+services:
+  sql:
+    image: besiedlungszug/herald-sql-server:0.1.2
+    environment:
+      DOLT_DATABASE: "herald"
+      DOLT_USER: "user"
+      DOLT_PASSWORD: "pass"
+      DOLT_USER_HOST: "%"
+    ports:
+      - "3306:3306"

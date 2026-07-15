@@ -31,6 +31,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Run Herald SQL Server
+        uses: hoverkraft-tech/compose-action@v3
+        with:
+          compose-file: ./compose.yaml
       - name: Cache Registry
         id: cache-registry
         uses: actions/cache@v5
