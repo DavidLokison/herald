@@ -5,16 +5,10 @@ This is the REST-API application layer of the historischer-besiedlungszug.de web
 - This project is built security-first. No communication with other services shall be logged in production mode whatsoever.
 - Encryption and other concerns are bound to change. It is advised to define and call a small amount of wrapper functions for communicating with other services.
 
-## Configuration
-- `Rocket.toml`: The service uses Rocket's default configuration file. See its [Configuration Guide](https://rocket.rs/guide/v0.5/configuration/) for details.
-- `.env`: SQLx has a feature of compile-time checking queries and resolving to the actual data types. For that to work, the database URL has to be set. The local `.env` provides the defaults for the local environment and really shouldn't be changed unless you know exactly what you are doing.
-
 ## Dependencies
-To run the test cases you need some kind of [Docker](https://www.docker.com) compatible runtime, the integration tests use the `DOCKER_HOST` environment variable to connect to a pipe. If setting up a test environment using [Podman](https://podman.io) make sure to set the environment variable accordingly and create the `herald` network beforehand.
+To build and test the project you need a [Docker](https://www.docker.com) compatible runtime and a compose wrapper. To build the project, all you need to do is firing up the shipped `compose.yaml` which sets up the [Herald SQL Server](https://github.com/besiedlungszug/herald-sql-server) image the application is targeted against. The integration tests use the `DOCKER_HOST` environment variable to connect to a pipe. If setting up a test environment using [Podman](https://podman.io) make sure to set the environment variable accordingly and create the `herald` bridge network beforehand.
 
 If you also want to contribute to the [Herald Data Project](https://www.dolthub.com/repositories/besiedlungszug/herald), you need to install [Dolt](https://www.dolthub.com) and clone the repository. The `.gitignore` file is set up to exclude local dolt related files so that the data project can live in the same directory as the software project.
-
-**Notice:** Currently, to add queries to the system, you also need to have a dolt sql server running. This currently can't be done with the Docker subsystem, so you need to install Dolt and the Herald data repository either way. This is bound to change before the first full release version.
 
 ## Contribution
 Contribution is highly welcome, whether by writing Issues or providing code. You acknowledge that all contribution will be published under the same terms and conditions as this main repository.
