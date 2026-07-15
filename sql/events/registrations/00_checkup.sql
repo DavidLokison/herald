@@ -1,5 +1,5 @@
 WITH
-    map AS (SELECT * FROM util_event_article_policy_map WHERE event_id = ?)
+    map AS (SELECT article_id, policy_birthday FROM article_policy_map_persons WHERE event_id = ?)
 SELECT HEX(article_id) AS id, a.description, price
 FROM JSON_TABLE(
         ?, "$[*]" COLUMNS(
@@ -11,9 +11,8 @@ FROM JSON_TABLE(
     INNER JOIN LATERAL (
         SELECT article_id
         FROM map
-        WHERE (policy_flags IS NULL OR policy_flags = team)
-            AND (policy_birthday IS NULL OR policy_birthday >= birthday)
-        ORDER BY policy_flags DESC, policy_age DESC
+        WHERE policy_birthday >= birthday
+        ORDER BY policy_birthday ASC
         LIMIT 1
     ) m
     INNER JOIN articles a USING (article_id)

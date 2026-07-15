@@ -48,7 +48,7 @@ pub struct NewPerson<'r> {
     pub address: NewAddress<'r>,
     pub birthday: Date,
     pub comment: &'r str,
-    pub flags: NewPersonFlags,
+    pub food_options: NewPersonFoodOptions,
 }
 
 impl<'r> IntoIntermediate<'r> for NewPerson<'r> {
@@ -59,7 +59,7 @@ impl<'r> IntoIntermediate<'r> for NewPerson<'r> {
             birthday: self.birthday.into_intermediate(),
             address: self.address.into_intermediate(),
             comment: self.comment.into_intermediate(),
-            flags: self.flags.into_intermediate(),
+            food_options: self.food_options.into_intermediate(),
         }
     }
 }
@@ -91,12 +91,16 @@ pub struct NewAddress<'r> {
 impl_intermediate!(NewAddress<'r> => "{}\n{} {}", street, zip, city);
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct NewPersonFlags {
+pub struct NewPersonFoodOptions {
     pub vegetarian: bool,
-    pub team: bool,
 }
 
-impl_intermediate!(NewPersonFlags => &);
+impl<'r> IntoIntermediate<'r> for NewPersonFoodOptions {
+    type Intermediate = u8;
+    fn into_intermediate(&'r self) -> Self::Intermediate {
+        (self.vegetarian as u8) << 0
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EmergencyContact<'r> {
