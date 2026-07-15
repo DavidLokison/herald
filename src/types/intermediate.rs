@@ -81,7 +81,7 @@ pub struct NewPerson<'r> {
     pub birthday: &'r Date,
     pub address: String,
     pub comment: &'r str,
-    pub flags: &'r request::NewPersonFlags,
+    pub food_options: u8,
 }
 
 #[derive(Serialize)]

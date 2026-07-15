@@ -20,7 +20,7 @@ pub struct Event {
     pub id: Uuid,
     pub r#type: String,
     pub title: String,
-    pub begin: Date,
+    pub start: Date,
     pub end: Date,
     pub description: Option<String>,
 }
