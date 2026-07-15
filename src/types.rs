@@ -5,6 +5,7 @@ use uuid::Uuid;
 pub(crate) mod intermediate;
 pub mod request;
 pub mod response;
+pub mod contract;
 
 use crate::Error;
 
