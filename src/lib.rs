@@ -1,5 +1,6 @@
 pub mod types;
 pub mod data;
+pub mod template;
 
 type Result<T> = std::result::Result<T, Error>;
 
