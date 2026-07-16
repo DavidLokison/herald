@@ -33,7 +33,7 @@ impl<'a> Template<'a> {
         Self::load(slug)
     }
 
-    fn create_handlebars(slug: &str, prefix: &str, directories: Vec<&str>) -> Result<Option<Handlebars<'a>>, TemplateError> {
+    fn create_handlebars(slug: &str, prefix: &str, directories: Vec<&str>, options: impl Fn(&mut Handlebars<'_>)) -> Result<Option<Handlebars<'a>>, TemplateError> {
         let files = {
             let mut ret = HashMap::new();
             for directory in directories {
@@ -46,6 +46,7 @@ impl<'a> Template<'a> {
             for (key, file) in files {
                 handlebars.register_template_file(&key, file)?;
             }
+            options(&mut handlebars);
             Ok(Some(handlebars))
         } else {
             Ok(None)
@@ -54,7 +55,10 @@ impl<'a> Template<'a> {
 
     pub fn load(slug: String) -> Result<Self, TemplateError> {
         Ok(Self {
-            mail: Self::create_handlebars(&slug, "mail", vec!["subject", "body", "sender", "recipient"])?,
+            mail: Self::create_handlebars(&slug, "mail", vec!["subject", "body", "sender", "recipient"], |handlebars| {
+                handlebars.set_strict_mode(true);
+                handlebars.register_escape_fn(handlebars::no_escape);
+            })?,
             slug: slug,
         })
     }
