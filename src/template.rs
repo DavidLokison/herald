@@ -33,20 +33,15 @@ impl<'a> Template<'a> {
         Self::load(slug)
     }
 
-    fn files(slug: &str, prefix: &str, directories: Vec<&str>) -> HashMap<String, String> {
-        let mut ret = HashMap::new();
-        for directory in directories {
-            ret.insert(directory.to_owned(), format!("./templates/{prefix}/{directory}/{slug}.hbs"));
-        }
-        ret
-    }
-
-    fn check_exists(files: impl IntoIterator<Item: AsRef<std::path::Path>>) -> std::io::Result<bool> {
-        files.into_iter().map(fs::exists).fold(Ok(true), |a, b| Ok(a? & b?))
-    }
-
-    fn create_handlebars(files: HashMap<String, String>) -> Result<Option<Handlebars<'a>>, TemplateError> {
-        if Self::check_exists(files.values())? {
+    fn create_handlebars(slug: &str, prefix: &str, directories: Vec<&str>) -> Result<Option<Handlebars<'a>>, TemplateError> {
+        let files = {
+            let mut ret = HashMap::new();
+            for directory in directories {
+                ret.insert(directory.to_owned(), format!("./templates/{prefix}/{directory}/{slug}.hbs"));
+            }
+            ret
+        };
+        if files.values().into_iter().map(fs::exists).fold(Ok(true) as std::io::Result<bool>, |a, b| Ok(a? & b?))? {
             let mut handlebars = Handlebars::new();
             for (key, file) in files {
                 handlebars.register_template_file(&key, file)?;
@@ -59,7 +54,7 @@ impl<'a> Template<'a> {
 
     pub fn load(slug: String) -> Result<Self, TemplateError> {
         Ok(Self {
-            mail: Self::create_handlebars(Self::files(&slug, "mail", vec!["subject", "body", "sender", "recipient"]))?,
+            mail: Self::create_handlebars(&slug, "mail", vec!["subject", "body", "sender", "recipient"])?,
             slug: slug,
         })
     }
