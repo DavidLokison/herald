@@ -72,14 +72,14 @@ mod tests {
 
     #[test]
     fn template_load() {
-        env::set_current_dir("./tests").unwrap();
+        env::set_current_dir(format!("{}/tests", env!("CARGO_MANIFEST_DIR"))).unwrap();
         let template = Template::load("order_confirmation".to_owned()).unwrap();
         assert_matches!(template.mail, Some(_));
     }
 
     #[test]
     fn template_load_none_if_missing() {
-        env::set_current_dir("./tests").unwrap();
+        env::set_current_dir(format!("{}/tests", env!("CARGO_MANIFEST_DIR"))).unwrap();
         let template = Template::load("missing_slug".to_owned()).unwrap();
         assert_matches!(template.mail, None);
     }
