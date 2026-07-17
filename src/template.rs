@@ -13,8 +13,6 @@ use sqlx::{
 pub enum TemplateError {
     #[error("io error")]
     IoError(#[from] std::io::Error),
-    #[error("sqlx error")]
-    SqlxError(#[from] sqlx::Error),
     #[error("handlebars template error")]
     HandlebarsTemplateError(#[from] handlebars::TemplateError),
 }
