@@ -4,7 +4,7 @@ use rocket_db_pools::Connection;
 use uuid::Uuid;
 
 mod core;
-use core::{Herald, Result, Created, Custom};
+use core::{Herald, Result, Created, Envelope};
 
 use herald::data;
 use herald::types::*;
@@ -16,24 +16,24 @@ expose_endpoint!(#[get("/events/open")] get_open_events);
 expose_endpoint!(#[get("/events/types")] get_event_types);
 
 #[get("/events/types/<event_type_slug>/items")]
-async fn get_bookable_items(mut db: Connection<Herald>, event_type_slug: &str) -> Result<Custom<Vec<Article>>> {
+async fn get_bookable_items(mut db: Connection<Herald>, event_type_slug: &str) -> Result<Json<Vec<Article>>> {
     let event_type_slug = EventTypeSlug::try_query(&mut **db, event_type_slug).await?;
     let articles = herald::data::get_bookable_items(&mut db, &event_type_slug).await?;
-    Custom::ok(articles)
+    Envelope::ok(articles)
 }
 
 #[get("/events/<event_id>/registrations/preview?<persons..>")]
-async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, persons: Vec<PriceCheck>) -> Result<Custom<Vec<Article>>> {
+async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, persons: Vec<PriceCheck>) -> Result<Json<Vec<Article>>> {
     let event_id = EventId::try_query(&mut **db, &event_id).await?;
     let preview = herald::data::get_registration_preview(&mut db, &event_id, &persons).await?;
-    Custom::ok(preview)
+    Envelope::ok(preview)
 }
 
 #[post("/events/<event_id>/registrations", data = "<registration>")]
-async fn create_registration(mut db: Connection<Herald>, event_id: Uuid, registration: Json<NewRegistration<'_>>) -> Result<Created<()>> {
+async fn create_registration(mut db: Connection<Herald>, event_id: Uuid, registration: Json<NewRegistration<'_>>) -> Result<Json<Created<()>>> {
     let event_id = EventId::try_query(&mut **db, &event_id).await?;
     let _ = data::create_registration(&mut db, &event_id, &registration).await?;
-    Created::ok("", ()) // TODO
+    Envelope::created("", ()) // TODO
 }
 
 #[launch]
