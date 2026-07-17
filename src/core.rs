@@ -12,9 +12,14 @@ pub type Result<T> = std::result::Result<Envelope<<T as IntoEnvelope>::Responder
 #[database("herald")]
 pub struct Herald(sqlx::MySqlPool);
 
+#[catch(404)]
+pub fn endpoint_not_found(status: Status, req: &Request) -> (Status, Json<Error>) {
+    (status, Json(Error { error: "ENDPOINT_NOT_FOUND", message: format!("request '{}' does not match an endpoint", req.uri()) }))
+}
+
 #[catch(default)]
 pub fn default(status: Status, _req: &Request) -> (Status, Json<Error>) {
-    (status, Json(Error{ error: "UNKNOWN_ERROR".to_owned() }))
+    (status, Json(Error { error: "UNKNOWN_ERROR", message: String::from("an unknown error occured") }))
 }
 
 pub fn build() -> Rocket<Build> {
@@ -29,7 +34,7 @@ pub fn build() -> Rocket<Build> {
             ..Default::default()
         })))
         .attach(Herald::init())
-        .register("/", catchers![default])
+        .register("/", catchers![endpoint_not_found, default])
 }
 
 #[macro_export]
@@ -67,7 +72,13 @@ impl IntoEnvelope for herald::Error {
                 herald::Error::NotFound(_) => Status::NotFound,
                 herald::Error::SqlxError(_) => Status::InternalServerError,
             },
-            Json(Error { error: self.to_string() }),
+            Json(Error {
+                error: match self {
+                    herald::Error::NotFound(_) => "RESOURCE_NOT_FOUND",
+                    herald::Error::SqlxError(_) => "BACKEND_FAILURE",
+                },
+                message: self.to_string()
+            }),
         ))
     }
 }
@@ -100,7 +111,8 @@ pub struct Success<T: Serialize> {
 
 #[derive(Serialize, Debug)]
 pub struct Error {
-    error: String,
+    error: &'static str,
+    message: String,
 }
 
 // Created implementations
