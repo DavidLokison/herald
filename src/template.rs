@@ -25,12 +25,11 @@ pub struct Template<'a> {
 }
 
 impl<'a> Template<'a> {
-    pub async fn prepare<'e, E>(e: E, status: u64) -> Result<Self, TemplateError>
+    pub fn query<'e, E>(e: E, status: u64) -> impl Future<Output = Result<Option<String>, sqlx::Error>>
     where
         E: Executor<'e, Database = MySql> + 'e,
     {
-        let slug = sqlx::query_file_scalar!("sql/registration_statuses/template.sql", status).fetch_one(e).await?.expect("status should yield a valid template slug");
-        Self::load(slug)
+        sqlx::query_file_scalar!("sql/registration_statuses/template.sql", status).fetch_one(e)
     }
 
     fn create_handlebars(slug: &str, prefix: &str, directories: Vec<&str>, options: impl Fn(&mut Handlebars<'_>)) -> Result<Option<Handlebars<'a>>, TemplateError> {
