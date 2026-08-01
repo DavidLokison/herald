@@ -50,13 +50,13 @@ impl<'a> Template<'a> {
         }
     }
 
-    pub fn load(slug: String) -> Result<Self, TemplateError> {
+    pub fn load(slug: &str) -> Result<Self, TemplateError> {
         Ok(Self {
             mail: Self::create_handlebars(&slug, "mail", vec!["subject", "body", "sender", "recipient"], |handlebars| {
                 handlebars.set_strict_mode(true);
                 handlebars.register_escape_fn(handlebars::no_escape);
             })?,
-            slug: slug,
+            slug: slug.to_string(),
         })
     }
 }
@@ -70,14 +70,14 @@ mod tests {
     #[test]
     fn template_load() {
         env::set_current_dir(format!("{}/tests", env!("CARGO_MANIFEST_DIR"))).unwrap();
-        let template = Template::load("order_confirmation".to_owned()).unwrap();
+        let template = Template::load("order_confirmation").unwrap();
         assert_matches!(template.mail, Some(_));
     }
 
     #[test]
     fn template_load_none_if_missing() {
         env::set_current_dir(format!("{}/tests", env!("CARGO_MANIFEST_DIR"))).unwrap();
-        let template = Template::load("missing_slug".to_owned()).unwrap();
+        let template = Template::load("missing_slug").unwrap();
         assert_matches!(template.mail, None);
     }
 }

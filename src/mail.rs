@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn send_email_pipeline() {
         env::set_current_dir(format!("{}/tests", env!("CARGO_MANIFEST_DIR"))).unwrap();
-        let template = Template::load("healthcheck".to_owned()).unwrap();
+        let template = Template::load("healthcheck").unwrap();
         let transport = AsyncStubTransport::new_ok();
         let future = send_mail(transport, template, {});
         let mut future = pin!(future);
