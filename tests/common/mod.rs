@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use std::thread;
+use std::time::Duration;
 use testcontainers::{
     Container,
     GenericImage,
@@ -20,8 +22,14 @@ pub struct SqlServerContainer(Container<GenericImage>);
 
 impl SqlServerContainer {
     pub fn create_open_event(&self) {
-        self.0.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")]))
+        let mut result = self.0.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")]))
             .expect("Failed to create open event");
+        let mut buf = String::new();
+        result.stdout().read_to_string(&mut buf);
+        result.stderr().read_to_string(&mut buf);
+        println!("> dolt sql -q <create_open_event>");
+        println!("{}", buf);
+        println!("<<<");
     }
 }
 
@@ -32,7 +40,7 @@ pub struct TestSuite {
 
 impl TestSuite {
     pub fn spawn() -> Self {
-        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.3.0")
+        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.3.4")
             .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
             .with_network("herald")
             .with_env_var("DOLT_ROOT_HOST", "%")

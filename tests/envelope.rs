@@ -1,5 +1,6 @@
 mod common;
 
+use std::assert_matches;
 use rocket::serde::json::{from_str, Value};
 use serde::Deserialize;
 use crate::common::TestSuite;
@@ -14,13 +15,18 @@ struct Error {
 #[test]
 fn success_endpoint_has_data() {
     let suite = TestSuite::spawn();
-    let response = reqwest::blocking::get(suite.path("/events/open")).unwrap();
+    let response = reqwest::blocking::get(suite.path("/events/open"))
+        .expect("Rocket should be responsive by now");
     assert_eq!(response.status(), reqwest::StatusCode::OK);
     assert_eq!(response.headers().get(reqwest::header::CONTENT_TYPE).unwrap(), "application/json");
-    let text = response.text().unwrap();
-    let payload: Value = from_str(&text).unwrap();
-    assert!(payload.is_object());
-    assert!(payload.as_object().unwrap().contains_key("data"));
+    let response_text = response.text();
+    assert_matches!(response_text, Ok(_));
+    let response_text = response_text.unwrap();
+    let response_payload: Result<Value, _> = from_str(&response_text);
+    assert_matches!(response_payload, Ok(_));
+    let response_payload = response_payload.unwrap();
+    assert!(response_payload.is_object());
+    assert!(response_payload.as_object().unwrap().contains_key("data"));
 }
 
 #[test]
