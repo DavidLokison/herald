@@ -1,0 +1,295 @@
+{
+    "openapi": "3.2.0",
+    "info": {
+        "title": "Herald",
+        "summary": "Besiedlungszug Event Manager",
+        "description": "This API manages the events and registrations for the registered association `Historischer Besiedlungszug A.D. 1156`.",
+        "contact": {
+            "name": "Herald Issue Tracker",
+            "url": "https://github.com/besiedlungszug/herald/issues"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "identifier": "Apache-2.0"
+        },
+        "version": "0.1.0"
+    },
+    "servers": [{
+        "url": "https://limbus.davidlokison.com/herald/dev",
+        "description": "Herald backend service hosted on DavidLokison's personal cloud server",
+        "name": "limbus"
+    }],
+    "paths": {
+        "/health": {
+            "get": {
+                "summary": "Check Upstream Health",
+                "description": "This operation runs a small selection of tests on the database backend and responds with test status and response time.",
+                "operationId": "checkHealth",
+                "responses": {
+                    "200": {
+                        "summary": "Successful Health Check",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/UpstreamHealth" } }
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        },
+        "/events/open": {
+            "get": {
+                "summary": "Get Open Events",
+                "description": "This query responds with a list of all association events currently up for registration.",
+                "operationId": "getOpenEvents",
+                "responses": {
+                    "200": {
+                        "summary": "Retrieved Event List",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/Events" } }
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        },
+        "/events/types": {
+            "get": {
+                "summary": "Get Event Types",
+                "description": "This query responds with a list of available event types.",
+                "operationId": "getEventTypes",
+                "responses": {
+                    "200": {
+                        "summary": "Retrieved Event Types",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/EventTypes" } }
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        },
+        "/events/types/{eventType}/items": {
+            "get": {
+                "summary": "Get Bookable Items",
+                "description": "This query responds with a list of bookable items the event type supports",
+                "operationId": "getBookableItems",
+                "parameters": [
+                    { "$ref": "#/components/parameters/eventType" }
+                ],
+                "responses": {
+                    "200": {
+                        "summary": "Retrieved Articles",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/Articles" } }
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        },
+        "/events/{eventId}/registrations/preview": {
+            "get": {
+                "summary": "Get Registration Preview",
+                "description": "This query responds with a list of articles corresponding to the persons queried in the same order as the persons supplied",
+                "operationId": "getRegistrationPreview",
+                "parameters": [
+                    { "$ref": "#/components/parameters/eventId" }, {
+                        "name": "birthdays",
+                        "in": "query",
+                        "description": "A list of the persons' birthdays to query article data for",
+                        "required": true,
+                        "explode": true,
+                        "schema": { "type": "string", "format": "date" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "summary": "Retrieved Articles",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/Articles" } }
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        },
+        "/events/{eventId}/registrations": {
+            "post": {
+                "summary": "Create Registration",
+                "description": "This request creates a registration to the specified event",
+                "operationId": "createRegistration",
+                "parameters": [
+                    { "$ref": "#/components/parameters/eventId" }, {
+                        "name": "manual",
+                        "in": "query",
+                        "description": "Request manual registration handling instead of automatic approval",
+                        "schema": { "type": "boolean" }
+                    }, {
+                        "name": "registration",
+                        "in": "data",
+                        "description": "Requested registration data",
+                        "required": true,
+                        "schema": { "$ref": "#/components/schemas/RegistrationRequest" }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "summary": "Registration Succeeded",
+                        "content": {}
+                    },
+                    "default": { "$ref": "#/components/responses/Error" }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "UpstreamHealth": {
+                "type": "object",
+                "required": ["ping", "tests"],
+                "properties": {
+                    "ping": { "type": "number", "format": "float" },
+                    "tests": { "type": "array" }
+                }
+            },
+            "Address": {
+                "type": "object",
+                "required": ["street", "zip", "city"],
+                "properties": {
+                    "street": { "type": "string", "example": "Musterstraße 15" },
+                    "zip": { "type": "string", "example": "12345" },
+                    "city": { "type": "string", "example": "Musterhausen" }
+                }
+            },
+            "Name": {
+                "type": "object",
+                "required": ["title", "firstname", "lastname"],
+                "properties": {
+                    "title": { "type": "string", "example": "Frau" },
+                    "firstname": { "type": "string", "example": "Klara" },
+                    "lastname": { "type": "string", "example": "Mustermann" }
+                }
+            },
+            "Price": {
+                "type": "object",
+                "required": ["value", "decimals", "currency"],
+                "properties": {
+                    "value": { "type": "number", "format": "int", "example": 3000 },
+                    "decimals": { "type": "number", "format": "int", "example": 2 },
+                    "currency": { "type": "string", "example": "EUR" }
+                }
+            },
+            "EmergencyContact": {
+                "type": "object",
+                "required": ["name", "phone"],
+                "properties": {
+                    "name": { "type": "string", "example": "Max Mustermann" },
+                    "phone": { "type": "string", "example": "+49 123 4567890" }
+                }
+            },
+            "PersonFoodOptions": {
+                "type": "object",
+                "required": ["vegetarian"],
+                "properties": {
+                    "vegetarian": { "type": "boolean" }
+                }
+            },
+            "Event": {
+                "type": "object",
+                "required": ["id", "type", "title", "begin", "end"],
+                "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "type": { "type": "string" },
+                    "title": { "type": "string" },
+                    "begin": { "type": "string", "format": "date" },
+                    "end": { "type": "string", "format": "date" },
+                    "description": { "type": "string" }
+                }
+            },
+            "Article": {
+                "type": "object",
+                "required": ["id", "description", "price"],
+                "properties": {
+                    "id": { "type": "string" },
+                    "description": { "type": "string" },
+                    "price": { "$ref": "#/components/schemas/Price" }
+                }
+            },
+            "RegistrationRequest": {
+                "type": "object",
+                "required": ["name", "address", "phone", "email", "comment", "emergency", "persons", "items"],
+                "properties": {
+                    "name": { "$ref": "#/components/schemas/Name" },
+                    "address": { "$ref": "#/components/schemas/Address" },
+                    "phone": { "type": "string" },
+                    "email": { "type": "string" },
+                    "comment": { "type": "string" },
+                    "emergency": { "$ref": "#/components/schemas/EmergencyContact" },
+                    "persons": { "type": "array", "items": { "$ref": "#/components/schemas/PersonRequest" } },
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/ItemRequest" } }
+                }
+            },
+            "PersonRequest": {
+                "type": "object",
+                "required": ["name", "address", "birthday", "comment", "foodOptions"],
+                "properties": {
+                    "name": { "$ref": "#/components/schemas/Name" },
+                    "address": { "$ref": "#/components/schemas/Address" },
+                    "birthday": { "type": "string", "format": "date" },
+                    "comment": { "type": "string" },
+                    "foodOptions": { "$ref": "#/components/schemas/PersonFoodOptions" }
+                }
+            },
+            "ItemRequest": {
+                "type": "object",
+                "required": ["articleId", "comment"],
+                "properties": {
+                    "articleId": { "type": "string" },
+                    "comment": { "type": "string" }
+                }
+            }
+        },
+        "responses": {
+            "Error": {
+                "summary": "Unexpected Error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "required": ["error", "message"],
+                            "properties": {
+                                "error": { "type": "string" },
+                                "message": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "eventType": {
+                "name": "eventType",
+                "in": "path",
+                "description": "Event Type to query items from (see `/events/types`)",
+                "required": true,
+                "schema": { "type": "string" },
+                "example": "hbz"
+            },
+            "eventId": {
+                "name": "eventId",
+                "in": "path",
+                "description": "Event ID to do actions on (see `/events/open`)",
+                "required": true,
+                "schema": { "type": "string", "format": "uuid" }
+            }
+        },
+        "mediaTypes": {
+            "UpstreamHealth": { "schema": {
+                "type": "object",
+                "properties": { "data": { "$ref": "#/components/schemas/UpstreamHealth" } }
+            } },
+            "Events": { "schema": {
+                "type": "object",
+                "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Event" } } }
+            } },
+            "EventTypes": { "schema": {
+                "type": "object",
+                "properties": { "data": { "type": "array", "items": { "type": "string" } } }
+            } },
+            "Articles": { "schema": {
+                "type": "object",
+                "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Article" } } }
+            } }
+        }
+    }
+}
