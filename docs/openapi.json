@@ -114,14 +114,13 @@
                         "in": "query",
                         "description": "Request manual registration handling instead of automatic approval",
                         "schema": { "type": "boolean" }
-                    }, {
-                        "name": "registration",
-                        "in": "data",
-                        "description": "Requested registration data",
-                        "required": true,
-                        "schema": { "$ref": "#/components/schemas/RegistrationRequest" }
                     }
                 ],
+                "requestBody": {
+                    "description": "Requested registration data",
+                    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrationRequest" } } },
+                    "required": true
+                },
                 "responses": {
                     "201": {
                         "summary": "Registration Succeeded",
