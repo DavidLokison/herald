@@ -55,7 +55,7 @@ fn registration_preview_succeeds() {
         .as_object().unwrap()
         .get("id").unwrap()
         .as_str().unwrap();
-    let preview_query = format!("/events/{}/registrations/preview?[].birthday=1974-05-19&[].birthday=1975-08-31", event_id);
+    let preview_query = format!("/events/{}/registrations/preview?birthdays=1974-05-19&birthdays=1975-08-31", event_id);
     let response = reqwest::blocking::get(suite.path(&preview_query)).unwrap();
     assert_eq!(response.status(), reqwest::StatusCode::OK);
     let response_text = response.text().unwrap();
