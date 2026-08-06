@@ -2,6 +2,7 @@ use rocket::{get, post, launch, routes};
 use rocket::serde::json::Json;
 use rocket_db_pools::Connection;
 use uuid::Uuid;
+use time::Date;
 
 mod core;
 use core::{Herald, Result, Created, Envelope};
@@ -22,10 +23,10 @@ async fn get_bookable_items(mut db: Connection<Herald>, event_type_slug: &str) -
     Envelope::ok(articles)
 }
 
-#[get("/events/<event_id>/registrations/preview?<persons..>")]
-async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, persons: Vec<PriceCheck>) -> Result<Json<Vec<Article>>> {
+#[get("/events/<event_id>/registrations/preview?<birthdays>")]
+async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, birthdays: Vec<Date>) -> Result<Json<Vec<Article>>> {
     let event_id = EventId::try_query(&mut **db, &event_id).await?;
-    let preview = herald::data::get_registration_preview(&mut db, &event_id, &persons).await?;
+    let preview = herald::data::get_registration_preview(&mut db, &event_id, &birthdays).await?;
     Envelope::ok(preview)
 }
 

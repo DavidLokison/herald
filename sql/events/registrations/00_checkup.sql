@@ -4,8 +4,7 @@ SELECT HEX(article_id) AS id, a.description, price
 FROM JSON_TABLE(
         ?, "$[*]" COLUMNS(
             ord FOR ORDINALITY,
-            birthday DATE PATH "$.birthday" ERROR ON ERROR,
-            team TINYINT UNSIGNED PATH "$.team" DEFAULT "0" ON ERROR
+            birthday DATE PATH "$" ERROR ON ERROR
         )
     ) data
     INNER JOIN LATERAL (

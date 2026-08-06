@@ -1,4 +1,5 @@
 use sqlx::MySqlConnection;
+use time::Date;
 
 use crate::Result;
 use crate::types::*;
@@ -38,8 +39,8 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>> {
         .map_err(Into::into)
 }
 
-pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &EventId<'_>, persons: &Vec<PriceCheck>) -> Result<Vec<Article>> {
-    let articles = sqlx::query_file_as!(intermediate::Article, "sql/events/registrations/00_checkup.sql", **event_id, persons.as_json()).fetch_all(e).await?;
+pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &EventId<'_>, birthdays: &Vec<Date>) -> Result<Vec<Article>> {
+    let articles = sqlx::query_file_as!(intermediate::Article, "sql/events/registrations/00_checkup.sql", **event_id, birthdays.as_json()).fetch_all(e).await?;
     // TODO: attach actual price info
     let articles = articles.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect();
     Ok(articles)
