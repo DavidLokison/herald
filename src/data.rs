@@ -46,10 +46,10 @@ pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &EventI
     Ok(articles)
 }
 
-pub async fn create_registration(e: &mut MySqlConnection, event_id: &EventId<'_>, registration: &NewRegistration<'_>) -> Result<()> {
+pub async fn create_registration(e: &mut MySqlConnection, event_id: &EventId<'_>, registration: &NewRegistration<'_>, manual: bool) -> Result<()> {
     sqlx::query_file!("sql/events/registrations/01_begin.sql", **event_id, registration.as_json()).execute(&mut *e).await?;
     sqlx::query_file!("sql/events/registrations/02_persons.sql", registration.persons.as_json()).execute(&mut *e).await?;
     sqlx::query_file!("sql/events/registrations/03_items.sql", registration.items.as_json()).execute(&mut *e).await?;
-    sqlx::query_file!("sql/events/registrations/04_finish.sql").execute(e).await?;
+    sqlx::query_file!("sql/events/registrations/04_finish.sql", if manual { "awaiting_approval" } else { "automatic_approval" }).execute(e).await?;
     Ok(())
 }

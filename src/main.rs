@@ -30,10 +30,10 @@ async fn get_registration_preview(mut db: Connection<Herald>, event_id: Uuid, bi
     Envelope::ok(preview)
 }
 
-#[post("/events/<event_id>/registrations", data = "<registration>")]
-async fn create_registration(mut db: Connection<Herald>, event_id: Uuid, registration: Json<NewRegistration<'_>>) -> Result<Json<Created<()>>> {
+#[post("/events/<event_id>/registrations?<manual>", data = "<registration>")]
+async fn create_registration(mut db: Connection<Herald>, event_id: Uuid, manual: bool, registration: Json<NewRegistration<'_>>) -> Result<Json<Created<()>>> {
     let event_id = EventId::try_query(&mut **db, &event_id).await?;
-    let _ = data::create_registration(&mut db, &event_id, &registration).await?;
+    let _ = data::create_registration(&mut db, &event_id, &registration, manual).await?;
     Envelope::created("", ()) // TODO
 }
 
