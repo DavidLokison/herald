@@ -96,8 +96,8 @@
                 ],
                 "responses": {
                     "200": {
-                        "summary": "Retrieved Articles",
-                        "content": { "application/json": { "$ref": "#/components/mediaTypes/Articles" } }
+                        "summary": "Retrieved Prices",
+                        "content": { "application/json": { "$ref": "#/components/mediaTypes/Prices" } }
                     },
                     "default": { "$ref": "#/components/responses/Error" }
                 }
@@ -161,8 +161,9 @@
             },
             "Price": {
                 "type": "object",
-                "required": ["value", "decimals", "currency"],
+                "required": ["description", "value", "decimals", "currency"],
                 "properties": {
+                    "description": { "type": "string" },
                     "value": { "type": "number", "format": "int", "example": 3000 },
                     "decimals": { "type": "number", "format": "int", "example": 2 },
                     "currency": { "type": "string", "example": "EUR" }
@@ -196,13 +197,13 @@
                 }
             },
             "Article": {
-                "type": "object",
-                "required": ["id", "description", "price"],
-                "properties": {
-                    "id": { "type": "string" },
-                    "description": { "type": "string" },
-                    "price": { "$ref": "#/components/schemas/Price" }
-                }
+                "allOf": [{
+                    "type": "object",
+                    "required": ["id"],
+                    "properties": { "id": { "type": "string" } }
+                }, {
+                    "$ref": "#/components/schemas/Price"
+                }]
             },
             "RegistrationRequest": {
                 "type": "object",
@@ -288,6 +289,10 @@
             "Articles": { "schema": {
                 "type": "object",
                 "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Article" } } }
+            } },
+            "Prices": { "schema": {
+                "type": "object",
+                "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Price" } } }
             } }
         }
     }

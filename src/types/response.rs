@@ -4,7 +4,8 @@ use uuid::Uuid;
 
 #[derive(Serialize, Debug)]
 pub struct Price {
-    pub value: u32,
+    pub description: String,
+    pub value: i32,
     pub decimals: u8,
     pub currency: String,
 }
@@ -28,7 +29,7 @@ pub struct Event {
 #[derive(Serialize, Debug)]
 pub struct Article {
     pub id: String,
-    pub description: String,
+    #[serde(flatten)]
     pub price: Price,
 }
 

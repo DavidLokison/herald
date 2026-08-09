@@ -39,17 +39,22 @@ pub async fn get_open_events(e: &mut MySqlConnection) -> Result<Vec<Event>> {
         .map_err(Into::into)
 }
 
-pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &EventId<'_>, birthdays: &Vec<Date>) -> Result<Vec<Article>> {
-    let articles = sqlx::query_file_as!(intermediate::Article, "sql/events/registrations/00_checkup.sql", **event_id, birthdays.as_json()).fetch_all(e).await?;
+pub async fn get_registration_preview(e: &mut MySqlConnection, event_id: &EventId<'_>, birthdays: &Vec<Date>) -> Result<Vec<Price>> {
+    let articles = sqlx::query_file_as!(intermediate::PricePreview, "sql/events/registrations/00_checkup.sql", **event_id, birthdays.as_json()).fetch_all(e).await?;
     // TODO: attach actual price info
     let articles = articles.into_iter().map(|a| a.with_price_info(2, "EUR".to_string())).collect();
     Ok(articles)
 }
 
-pub async fn create_registration(e: &mut MySqlConnection, event_id: &EventId<'_>, registration: &NewRegistration<'_>) -> Result<()> {
+pub async fn create_registration(e: &mut MySqlConnection, event_id: &EventId<'_>, registration: &NewRegistration<'_>, manual: bool) -> Result<()> {
     sqlx::query_file!("sql/events/registrations/01_begin.sql", **event_id, registration.as_json()).execute(&mut *e).await?;
     sqlx::query_file!("sql/events/registrations/02_persons.sql", registration.persons.as_json()).execute(&mut *e).await?;
     sqlx::query_file!("sql/events/registrations/03_items.sql", registration.items.as_json()).execute(&mut *e).await?;
-    sqlx::query_file!("sql/events/registrations/04_finish.sql").execute(e).await?;
+    if manual {
+        sqlx::query_file!("sql/events/registrations/04_finish.sql", "awaiting_approval").execute(e).await?;
+    } else {
+        sqlx::query_file!("sql/events/registrations/04_finish.sql", "automatic_approval").execute(&mut *e).await?;
+        sqlx::query_file!("sql/events/registrations/05_approve.sql").execute(e).await?;
+    }
     Ok(())
 }
