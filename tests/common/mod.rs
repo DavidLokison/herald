@@ -40,7 +40,7 @@ pub struct TestSuite {
 
 impl TestSuite {
     pub fn spawn() -> Self {
-        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.3.4")
+        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.4.0")
             .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
             .with_network("herald")
             .with_env_var("DOLT_ROOT_HOST", "%")

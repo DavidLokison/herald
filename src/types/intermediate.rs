@@ -96,18 +96,34 @@ pub struct NewRegistration<'r> {
 
 
 
+pub struct PricePreview {
+    pub description: String,
+    pub price: i32,
+}
+
+impl PricePreview {
+    pub fn with_price_info(self, decimals: u8, currency: String) -> response::Price {
+        response::Price {
+            description: self.description,
+            value: self.price,
+            decimals: decimals,
+            currency: currency,
+        }
+    }
+}
+
 pub struct Article {
     pub id: String,
     pub description: String,
-    pub price: u32,
+    pub price: i32,
 }
 
 impl Article {
     pub fn with_price_info(self, decimals: u8, currency: String) -> response::Article {
         response::Article {
             id: self.id,
-            description: self.description,
             price: response::Price {
+                description: self.description,
                 value: self.price,
                 decimals: decimals,
                 currency: currency,
