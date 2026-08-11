@@ -10,12 +10,3 @@ services:
       DOLT_USER_HOST: "%"
     ports:
       - "3306:3306"
-  smtp:
-    image: axllent/mailpit:v1.30
-    environment:
-      MP_SMTP_REQUIRE_TLS: "true"
-      MP_SMTP_TLS_CERT: "sans:localhost"
-      MP_SMTP_TLS_KEY: "sans:localhost"
-    ports:
-      - "1025:1025"
-      - "8025:8025"
