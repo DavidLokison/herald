@@ -23,10 +23,9 @@ pub fn default(status: Status, _req: &Request) -> (Status, Json<Error>) {
 }
 
 pub fn build() -> Rocket<Build> {
-    let _ = dotenv::from_path(std::env::current_dir().unwrap().join(".env"));
     rocket::custom(rocket::Config::figment()
         .merge(("databases.herald", rocket_db_pools::Config {
-            url: std::env::var("DATABASE_URL").expect("DATABASE_URL should be specified by the environment or .env file"),
+            url: std::env::var("DATABASE_URL").expect("DATABASE_URL should be specified by the environment"),
             min_connections: None,
             max_connections: 1024,
             connect_timeout: 3,
