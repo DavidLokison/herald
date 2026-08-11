@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer format release tag'
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  get-project-name:
+    name: Get Package Name
+    runs-on: ubuntu-22.04
+    outputs:
+      name: ${{ steps.get_name.outputs.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Get Name
+        id: get_name
+        run: |
+          NAME=$(cargo metadata --offline --locked --no-deps --format-version=1 | jq '.packages[] | .name' -r)
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+
+  create-release-commit:
+    name: Create Release Commit
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Update Version Tag
+        run: |
+          sed -i 's/^version = ".*"$/version = "'$VERSION'"/' Cargo.toml
+          sed -i 's/^        "version": ".*"$/        "version": "'$VERSION'"/' docs/openapi.json
+          cargo generate-lockfile
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+      - name: Commit Version Changes
+        uses: EndBug/add-and-commit@v10
+        with:
+          message: ${{ format('release{0} v{1}', ':', github.event.inputs.version) }}
+          add: Cargo.toml docs/openapi.json
+          tag: ${{ format('v{0}', github.event.inputs.version) }}
+          default_author: github_actions
+          pull: "--ff"
+
+  cache-crate-dependencies:
+    name: Cache Crate Dependencies
+    needs: create-release-commit
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Cache Registry
+        id: cache-registry
+        uses: actions/cache@v5
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          path: ~/.cargo
+          lookup-only: true
+      - name: Cargo Fetch
+        if: steps.cache-registry.outputs.cache-hit != 'true'
+        run: cargo fetch --locked
+
+  build-release-artifacts:
+    name: Build Release Artifacts
+    needs: [get-project-name, cache-crate-dependencies]
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Run Compose Build Stack
+        uses: hoverkraft-tech/compose-action@v3
+        with:
+          compose-file: ${{ github.workspace }}/compose.yaml
+      - name: Restore Registry Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          path: ~/.cargo
+          fail-on-cache-miss: true
+      - name: Setup Target
+        run: rustup target add ${{ matrix.target }}
+      - name: Install MUSL Tools
+        if: ${{ endsWith(matrix.target, '-musl') }}
+        run: sudo apt update && sudo apt install -y musl-tools
+      - name: Build
+        run: cargo build --offline --locked --verbose --release --target ${{ matrix.target }}
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ needs.get-project-name.outputs.name }}
+          retention-days: 1
+          overwrite: true
+
+  build-docker-image:
+    name: Build Docker Image
+    needs: [get-project-name, build-release-artifacts]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile <<EOF
+          FROM scratch
+          COPY --chmod=0755 ./${{ needs.get-project-name.outputs.name }} /bin/${{ needs.get-project-name.outputs.name }}
+          ENTRYPOINT ["/bin/${{ needs.get-project-name.outputs.name }}"]
+          EOF
+      - name: Download Binary Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release-x86_64-unknown-linux-musl
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          platforms: linux/amd64
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v7
+        with:
+          platforms: linux/amd64
+          context: .
+          push: true
+          tags: ${{ github.repository }}:${{ github.event.inputs.version }}
