@@ -67,6 +67,6 @@ fn registration_preview_succeeds() {
     assert_eq!(response_data.len(), 2);
     for article_data in response_data {
         assert!(article_data.is_object());
-        assert!(article_data.as_object().unwrap().contains_key("price"));
+        assert!(article_data.as_object().unwrap().contains_key("value"));
     }
 }
