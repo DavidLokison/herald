@@ -11,8 +11,6 @@ serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.7.4", default-features = false, features = ["time", "uuid", "macros"] }
 time = { version = "0.3", features = ["serde", "serde-human-readable"] }
 uuid = { version = "1", features = ["serde"] }
-handlebars = "6"
-lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-rustls", "builder", "smtp-transport", "aws-lc-rs", "webpki-roots"] }
 
 [dev-dependencies]
 reqwest = { version = "0.13", features = ["blocking"] }

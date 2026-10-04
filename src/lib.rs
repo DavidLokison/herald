@@ -1,7 +1,6 @@
 pub mod types;
 pub mod data;
 pub mod template;
-pub mod mail;
 
 type Result<T> = std::result::Result<T, Error>;
 
