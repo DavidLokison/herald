@@ -2,6 +2,10 @@ pub mod types;
 pub mod data;
 pub mod template;
 
+pub use sqlx;
+pub use uuid::Uuid;
+pub use time::Date;
+
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
