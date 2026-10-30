@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use time::Date;
 
+use super::{Name, Address};
 use super::intermediate::{
     self,
     impl_intermediate,
@@ -9,8 +10,8 @@ use super::intermediate::{
 
 #[derive(Deserialize, Debug)]
 pub struct NewRegistration<'r> {
-    pub name: NewName<'r>,
-    pub address: NewAddress<'r>,
+    pub name: Name<'r>,
+    pub address: Address<'r>,
     pub phone: &'r str,
     pub email: &'r str,
     pub comment: &'r str,
@@ -35,8 +36,8 @@ impl<'r> IntoIntermediate<'r> for NewRegistration<'r> {
 
 #[derive(Deserialize, Debug)]
 pub struct NewPerson<'r> {
-    pub name: NewName<'r>,
-    pub address: NewAddress<'r>,
+    pub name: Name<'r>,
+    pub address: Address<'r>,
     pub birthday: Date,
     pub comment: &'r str,
     pub food_options: NewPersonFoodOptions,
@@ -62,24 +63,6 @@ pub struct NewItem<'r> {
 }
 
 impl_intermediate!(NewItem<'r> => &);
-
-#[derive(Deserialize, Debug)]
-pub struct NewName<'r> {
-    pub title: &'r str,
-    pub firstname: &'r str,
-    pub lastname: &'r str,
-}
-
-impl_intermediate!(NewName<'r> => "{}\t{}\t{}", title, firstname, lastname);
-
-#[derive(Deserialize, Debug)]
-pub struct NewAddress<'r> {
-    pub street: &'r str,
-    pub zip: &'r str,
-    pub city: &'r str,
-}
-
-impl_intermediate!(NewAddress<'r> => "{}\n{} {}", street, zip, city);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewPersonFoodOptions {
