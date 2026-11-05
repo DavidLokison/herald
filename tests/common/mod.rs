@@ -3,7 +3,7 @@
 use std::thread;
 use std::time::Duration;
 use testcontainers::{
-    Container,
+    ContainerAsync,
     GenericImage,
     GenericBuildableImage,
     ImageExt,
@@ -13,20 +13,23 @@ use testcontainers::{
         ExecCommand,
     },
     runners::{
-        SyncRunner,
-        SyncBuilder,
+        AsyncRunner,
+        AsyncBuilder,
     },
 };
+use tokio::io::AsyncReadExt;
 
-pub struct SqlServerContainer(Container<GenericImage>);
+pub struct SqlServerContainer(ContainerAsync<GenericImage>);
 
 impl SqlServerContainer {
-    pub fn create_open_event(&self) {
+    pub async fn create_open_event(&self) {
         let mut result = self.0.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")]))
+            .await
             .expect("Failed to create open event");
+        assert_eq!(result.exit_code().await.unwrap().unwrap(), 0);
         let mut buf = String::new();
-        result.stdout().read_to_string(&mut buf);
-        result.stderr().read_to_string(&mut buf);
+        result.stdout().read_to_string(&mut buf).await;
+        result.stderr().read_to_string(&mut buf).await;
         println!("> dolt sql -q <create_open_event>");
         println!("{}", buf);
         println!("<<<");
@@ -35,22 +38,25 @@ impl SqlServerContainer {
 
 pub struct TestSuite {
     pub sql_server: SqlServerContainer,
-    rocket: Container<GenericImage>,
+    rocket: ContainerAsync<GenericImage>,
 }
 
 impl TestSuite {
-    pub fn spawn() -> Self {
+    pub async fn spawn() -> Self {
         let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.4.1")
             .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
             .with_network("herald")
             .with_env_var("DOLT_ROOT_HOST", "%")
             .start()
+            .await
             .unwrap();
         let mut ip = String::new();
         sql_server.exec(ExecCommand::new(["hostname", "-I"]))
+            .await
             .unwrap()
             .stdout()
             .read_to_string(&mut ip)
+            .await
             .unwrap();
         let rocket = GenericBuildableImage::new("localhost/herald/rocket", "latest")
             .with_dockerfile_string(
@@ -60,6 +66,7 @@ impl TestSuite {
             )
             .with_file(env!("CARGO_BIN_EXE_herald"), "./herald")
             .build_image()
+            .await
             .unwrap()
             .with_exposed_port(8000.tcp())
             .with_wait_for(WaitFor::message_on_stdout("Rocket has launched from http://0.0.0.0:8000"))
@@ -67,6 +74,7 @@ impl TestSuite {
             .with_env_var("DATABASE_URL", format!("mysql://root@{}:3306/herald", ip.trim()))
             .with_env_var("ROCKET_ADDRESS", "0.0.0.0")
             .start()
+            .await
             .unwrap();
         TestSuite {
             sql_server: SqlServerContainer(sql_server),
@@ -74,11 +82,11 @@ impl TestSuite {
         }
     }
 
-    pub fn path(&self, path: &str) -> String {
-        format!("http://localhost:{}{}", self.port(), path)
+    pub async fn path(&self, path: &str) -> String {
+        format!("http://localhost:{}{}", self.port().await, path)
     }
 
-    fn port(&self) -> u16 {
-        self.rocket.get_host_port_ipv4(8000).expect("test suite rocket runner should expose port 8000")
+    async fn port(&self) -> u16 {
+        self.rocket.get_host_port_ipv4(8000).await.expect("test suite rocket runner should expose port 8000")
     }
 }

@@ -8,10 +8,11 @@ thiserror = "2"
 rocket = { version = "0.5", features = ["json", "tls", "uuid"] }
 rocket_db_pools = { version = "0.2", features = ["sqlx_mysql"] }
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0.7.4", default-features = false, features = ["time", "uuid", "macros"] }
+sqlx = { version = "0.7.4", default-features = false, features = ["json", "time", "uuid", "macros"] }
 time = { version = "0.3", features = ["serde", "serde-human-readable"] }
 uuid = { version = "1", features = ["serde"] }
 
 [dev-dependencies]
-reqwest = { version = "0.13", features = ["blocking"] }
-testcontainers = { version = "0.28", features = ["blocking"] }
+reqwest = { version = "0.13" }
+testcontainers = { version = "0.28" }
+tokio = { version = "1", features = ["macros"] }
