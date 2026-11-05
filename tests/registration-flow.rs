@@ -5,13 +5,13 @@ use rocket::serde::json::{Value, from_str};
 use uuid::Uuid;
 use crate::common::TestSuite;
 
-#[test]
-fn get_open_events_succeeds() {
-    let suite = TestSuite::spawn();
-    suite.sql_server.create_open_event();
-    let response = reqwest::blocking::get(suite.path("/events/open")).unwrap();
+#[tokio::test]
+async fn get_open_events_succeeds() {
+    let suite = TestSuite::spawn().await;
+    suite.sql_server.create_open_event().await;
+    let response = reqwest::get(suite.path("/events/open").await).await.unwrap();
     assert_eq!(response.status(), reqwest::StatusCode::OK);
-    let response_text = response.text().unwrap();
+    let response_text = response.text().await.unwrap();
     println!("{}", &response_text);
     let response_payload: Value = from_str(&response_text).unwrap();
     let response_data = response_payload.get("data").unwrap();
@@ -28,12 +28,12 @@ fn get_open_events_succeeds() {
     assert_matches!(Uuid::try_parse(event_id), Ok(_));
 }
 
-#[test]
-fn get_open_events_empty_array() {
-    let suite = TestSuite::spawn();
-    let response = reqwest::blocking::get(suite.path("/events/open")).unwrap();
+#[tokio::test]
+async fn get_open_events_empty_array() {
+    let suite = TestSuite::spawn().await;
+    let response = reqwest::get(suite.path("/events/open").await).await.unwrap();
     assert_eq!(response.status(), reqwest::StatusCode::OK);
-    let response_text = response.text().unwrap();
+    let response_text = response.text().await.unwrap();
     println!("{}", &response_text);
     let response_payload: Value = from_str(&response_text).unwrap();
     let response_data = response_payload.get("data").unwrap();
@@ -42,12 +42,12 @@ fn get_open_events_empty_array() {
     assert_eq!(response_data.len(), 0);
 }
 
-#[test]
-fn registration_preview_succeeds() {
-    let suite = TestSuite::spawn();
-    suite.sql_server.create_open_event();
-    let response = reqwest::blocking::get(suite.path("/events/open")).unwrap();
-    let response_text = response.text().unwrap();
+#[tokio::test]
+async fn registration_preview_succeeds() {
+    let suite = TestSuite::spawn().await;
+    suite.sql_server.create_open_event().await;
+    let response = reqwest::get(suite.path("/events/open").await).await.unwrap();
+    let response_text = response.text().await.unwrap();
     println!("{}", &response_text);
     let response_payload: Value = from_str(&response_text).unwrap();
     let event_id = response_payload.get("data").unwrap()
@@ -56,9 +56,9 @@ fn registration_preview_succeeds() {
         .get("id").unwrap()
         .as_str().unwrap();
     let preview_query = format!("/events/{}/registrations/preview?birthdays=1974-05-19&birthdays=1975-08-31", event_id);
-    let response = reqwest::blocking::get(suite.path(&preview_query)).unwrap();
+    let response = reqwest::get(suite.path(&preview_query).await).await.unwrap();
     assert_eq!(response.status(), reqwest::StatusCode::OK);
-    let response_text = response.text().unwrap();
+    let response_text = response.text().await.unwrap();
     println!("{}", &response_text);
     let response_payload: Value = from_str(&response_text).unwrap();
     let response_data = response_payload.get("data").unwrap();

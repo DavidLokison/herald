@@ -12,14 +12,15 @@ struct Error {
     message: String,
 }
 
-#[test]
-fn success_endpoint_has_data() {
-    let suite = TestSuite::spawn();
-    let response = reqwest::blocking::get(suite.path("/events/open"))
+#[tokio::test]
+async fn success_endpoint_has_data() {
+    let suite = TestSuite::spawn().await;
+    let response = reqwest::get(suite.path("/events/open").await)
+        .await
         .expect("Rocket should be responsive by now");
     assert_eq!(response.status(), reqwest::StatusCode::OK);
     assert_eq!(response.headers().get(reqwest::header::CONTENT_TYPE).unwrap(), "application/json");
-    let response_text = response.text();
+    let response_text = response.text().await;
     assert_matches!(response_text, Ok(_));
     let response_text = response_text.unwrap();
     let response_payload: Result<Value, _> = from_str(&response_text);
@@ -29,13 +30,13 @@ fn success_endpoint_has_data() {
     assert!(response_payload.as_object().unwrap().contains_key("data"));
 }
 
-#[test]
-fn missing_endpoint_returns_404() {
-    let suite = TestSuite::spawn();
-    let response = reqwest::blocking::get(suite.path("/evnets/oops/typo")).unwrap();
+#[tokio::test]
+async fn missing_endpoint_returns_404() {
+    let suite = TestSuite::spawn().await;
+    let response = reqwest::get(suite.path("/evnets/oops/typo").await).await.unwrap();
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
     assert_eq!(response.headers().get(reqwest::header::CONTENT_TYPE).unwrap(), "application/json");
-    let text = response.text().unwrap();
+    let text = response.text().await.unwrap();
     let error: Error = from_str(&text).unwrap();
     assert_eq!(error.error, "ENDPOINT_NOT_FOUND");
 }
