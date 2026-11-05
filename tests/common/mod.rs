@@ -41,17 +41,32 @@ impl SqlServerContainer {
         self.0.get_host_port_ipv4(3306).await.expect("test suite sql runner should expose port 3306")
     }
 
-    pub async fn create_open_event(&self) {
-        let mut result = self.0.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")]))
-            .await
-            .expect("Failed to create open event");
+    async fn exec(&self, c: ExecCommand) {
+        let mut result = self.0.exec(c)
+            .await.unwrap();
         assert_eq!(result.exit_code().await.unwrap().unwrap(), 0);
         let mut buf = String::new();
         result.stdout().read_to_string(&mut buf).await;
         result.stderr().read_to_string(&mut buf).await;
-        println!("> dolt sql -q <create_open_event>");
+        println!("> dolt sql");
         println!("{}", buf);
         println!("<<<");
+    }
+
+    pub async fn create_open_event(&self) {
+        self.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")])).await;
+    }
+
+    pub async fn create_pseudo_registration(&self) {
+        self.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_pseudo_registration.sql")])).await;
+    }
+
+    pub async fn create_club_information_stub(&self) {
+        self.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_club_information_stub.sql")])).await;
+    }
+
+    pub async fn approve_single_registration(&self) {
+        self.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("approve_single_registration.sql")])).await;
     }
 }
 
@@ -75,7 +90,6 @@ impl TestSuite {
             .unwrap()
             .with_exposed_port(8000.tcp())
             .with_wait_for(WaitFor::message_on_stdout("Rocket has launched from http://0.0.0.0:8000"))
-            .with_network("herald")
             .with_env_var("DATABASE_URL", format!("mysql://root@host.containers.internal:{}/herald", sql_server.port().await))
             .with_env_var("ROCKET_ADDRESS", "0.0.0.0")
             .start()
