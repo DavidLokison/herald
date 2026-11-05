@@ -22,6 +22,25 @@ use tokio::io::AsyncReadExt;
 pub struct SqlServerContainer(ContainerAsync<GenericImage>);
 
 impl SqlServerContainer {
+    pub async fn spawn() -> Self {
+        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.4.1")
+            .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
+            .with_exposed_port(3306.tcp())
+            .with_env_var("DOLT_ROOT_HOST", "%")
+            .start()
+            .await
+            .unwrap();
+        Self(sql_server)
+    }
+
+    pub async fn url(&self) -> String {
+        format!("mysql://root@localhost:{}/herald", self.port().await)
+    }
+    
+    async fn port(&self) -> u16 {
+        self.0.get_host_port_ipv4(3306).await.expect("test suite sql runner should expose port 3306")
+    }
+
     pub async fn create_open_event(&self) {
         let mut result = self.0.exec(ExecCommand::new(vec!["dolt", "sql", "-q", include_str!("create_open_event.sql")]))
             .await
@@ -43,21 +62,7 @@ pub struct TestSuite {
 
 impl TestSuite {
     pub async fn spawn() -> Self {
-        let sql_server = GenericImage::new("besiedlungszug/herald-sql-server", "0.4.1")
-            .with_wait_for(WaitFor::message_on_stdout("Ready for connections."))
-            .with_network("herald")
-            .with_env_var("DOLT_ROOT_HOST", "%")
-            .start()
-            .await
-            .unwrap();
-        let mut ip = String::new();
-        sql_server.exec(ExecCommand::new(["hostname", "-I"]))
-            .await
-            .unwrap()
-            .stdout()
-            .read_to_string(&mut ip)
-            .await
-            .unwrap();
+        let sql_server = SqlServerContainer::spawn().await;
         let rocket = GenericBuildableImage::new("localhost/herald/rocket", "latest")
             .with_dockerfile_string(
                 r#"FROM debian:stable-slim
@@ -71,13 +76,13 @@ impl TestSuite {
             .with_exposed_port(8000.tcp())
             .with_wait_for(WaitFor::message_on_stdout("Rocket has launched from http://0.0.0.0:8000"))
             .with_network("herald")
-            .with_env_var("DATABASE_URL", format!("mysql://root@{}:3306/herald", ip.trim()))
+            .with_env_var("DATABASE_URL", format!("mysql://root@host.containers.internal:{}/herald", sql_server.port().await))
             .with_env_var("ROCKET_ADDRESS", "0.0.0.0")
             .start()
             .await
             .unwrap();
         TestSuite {
-            sql_server: SqlServerContainer(sql_server),
+            sql_server: sql_server,
             rocket: rocket,
         }
     }
