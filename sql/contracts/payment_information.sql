@@ -12,13 +12,13 @@ SELECT
     registrations.invoice_id AS `invoice_id: &[u8]`,
     JSON_ARRAYAGG(
         JSON_OBJECT(
-            'id', articles.article_id,
+            'id', HEX(articles.article_id),
             'description', articles.description,
             'count', registration_invoices.count,
             'price', JSON_OBJECT(
-            'value', articles.price,
-            'decimals', club_information.bank_currency_decimals,
-            'currency', club_information.bank_currency
+                'value', articles.price,
+                'decimals', club_information.bank_currency_decimals,
+                'currency', club_information.bank_currency
             )
         )
     ) AS `articles!: Articles`,

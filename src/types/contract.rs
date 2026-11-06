@@ -178,7 +178,7 @@ impl From<Json<Self>> for Price {
 
 #[derive(Serialize, Deserialize)]
 pub struct Article {
-    pub id: Vec<u8>,
+    pub id: String,
     pub description: String,
     pub count: u8,
     pub price: Price,
