@@ -154,13 +154,19 @@ impl Serialize for Price {
         where
             S: serde::Serializer,
     {
-        let mut digits = self.value.to_string();
+        let sign = if self.value < 0 { "-" } else { "" };
+        let mut digits = self.value.unsigned_abs().to_string();
         if self.decimals > 0 {
             let decimals = self.decimals as usize;
-            let (left, right) = digits.as_str().split_at(digits.len() - decimals);
-            digits = format!("{}.{}", left, right);
+            if digits.len() > decimals {
+                let (left, right) = digits.as_str().split_at(digits.len() - decimals);
+                digits = format!("{}.{}", left, right);
+            } else {
+                let padding = "0".repeat(decimals - digits.len());
+                digits = format!("0.{}{}", padding, digits);
+            }
         }
-        s.serialize_str(&format!("{} {}", self.currency, digits))
+        s.serialize_str(&format!("{} {}{}", self.currency, sign, digits))
     }
 }
 
@@ -175,7 +181,6 @@ pub struct Article {
     pub id: Vec<u8>,
     pub description: String,
     pub count: u8,
-    #[serde(flatten)]
     pub price: Price,
 }
 
